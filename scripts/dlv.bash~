@@ -1,0 +1,17 @@
+#!/bin/bash
+
+INPUTFILE=$1
+OUTPUTFILE=$2
+
+#SPARC TO ASP
+java -jar ~/Documents/UniSummerWork/sparc.jar ~/Documents/UniSummerWork/sparcFiles/$INPUTFILE  -solver dlv #-A -solveropts "-pfilter=appl" -o ~/Documents/UniSummerWork/outputFiles/asp.txt > ~/Documents/UniSummerWork/outputFiles/output2.txt
+
+
+#-solveropts "-cautious"
+# #ADDING MAGIC COMMANDS
+# (echo -n '#hide. # -solveropts "-pfilter=appl"
+	
+# 	'; cat ~/Documents/UniSummerWork/outputFiles/asp.txt) > ~/Documents/UniSummerWork/outputFiles/editedAsp.txt
+
+# #SOLVING ASP
+# dlv 0 ~/Documents/UniSummerWork/outputFiles/editedAsp.txt --shift  > ~/Documents/UniSummerWork/outputFiles/$OUTPUTFILE 

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+INPUTFILE=$1
+OUTPUTFILE=$2
+
+java -jar ~/Documents/UniSummerWork/sparc.jar ~/Documents/UniSummerWork/sparcFiles/$INPUTFILE -solver clingo
+
