@@ -1,0 +1,200 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Class hierachy
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+is_subclass(#animate, #thing)
+is_subclass(#innimate, #thing)
+
+is_subclass(#person, #animate)
+is_subclass(#robot, #animate)
+
+is_subclass(#object, #inanimate)
+
+is_subclass(#door, #inanimate)
+
+
+%% hierachies of locations
+is_subclass(#building, #location)
+is_subclass(#floor, #building)
+is_subclass(#door, #floor)
+is_subclass(#room, #floor)
+is_subclass(#area, #room)
+
+
+%%membership rules
+member_of(#object, #class) if is_a(#object, #class)
+member_of(#object, #class1) if is_a(#object, #class2)^is_subclass(#class2, #class1)
+-member_of(#object, #class) if not member_of(#object, #class)
+
+%% subclass relation rules
+-is_subclass(#class1, #class2) if not is_subclass(#class1, #class2)
+
+
+%% sibling rules
+%if both classes have the same parent class, then they are siblings
+siblings(C1, C2) if is_subclass(C1, C3), is_subclass(C2, C3)
+%% if not defined to be a sibling, then not
+-siblings(C1, C2) if not siblings(C1, C2)
+
+%% location membership rules
+belongs_to(L1, L2) if is_subclass(L1, L2)
+belongs_to(L1, L3) if belongs_to(L1, L2), belongs_to(L2, L3), is_subclass(L2, L3)
+-belongs_to(L1, L2) if not belongs_to(L1, L2)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% AL BEGINS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Statics
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+belongs_to(#location, #location)  %% rooms consist of areas and doors, floors consist of rooms, buildings consist of floors
+is_connected(#location, #location)  %% is physically connected
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Fluents
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Inertial Fluents
+has_location(#thing, #location)
+has_object(#animate, #inanimate)
+is_open(#door)
+is_on(#thing, #thing)
+
+%% Defined Fluents
+can_move_between(#location, #location) %% is actually accessible at this point in time
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Actions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+travel(#animate, #location)
+pick_up(#animate, #object)
+put_down(#animate, #object)
+open_door(#animate, #door)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Causal laws
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% robot can travel to a location
+travel(R, L2) causes has_location(R, L2)
+
+%% robot can pick up an object
+pick_up(R, O) causes has_object(R, O)
+
+%% robot can put down an object
+put_down_object(R, O) causes -has_object(R, O)
+
+%% if a robot puts down an object at a location and there is already an object O2 there, O1 is on O2.
+put_down_object(R,O) causes is_on(O1,O2) if has_location(Robot, L), has_location(O2, L)
+
+%% robot can open a door
+open_door(R, D) causes is_open(D)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% State constraints
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% if a thing is in a specific location, it is also in the locations above it in the hierachy
+has_location(Th, L2) if has_location(Th, L1), belongs_to(L1, L2) 
+
+%% an thing can only be in one sort of location at a time
+-has_location(Th, L1) if has_location(Th, L2), siblings(L1, L2)
+
+%% if a animate being has an object, the object's location is that of the being
+has_location(O,L) if has_location(A,L), has_object(A,O)
+
+%% If areas are in the same room, then they are connected
+is_connected(A1, A2) if belongs_to(A1, R1), belongs_to(A2, R1)
+
+%% If rooms have the same door, then they are connected
+is_connected(R1, R2) if belongs_to(D1, R1), belongs_to(D2, R2)
+
+%% Locations are not connected unless you explicitly say they are
+-is_connected(L1, L2) if not is_connected(L1, L2)
+
+%% Location are communitive
+is_connected(L1, L2) if is_connected(L2, L1)
+
+%% If areas are connected, then you can move between them
+can_move_between(A1, A2) if is_connected(A1, A2)
+
+%% If rooms are connected and the door between them is open, you can move between them
+can_move_between(R1, R2) if is_connected(R1, R2), is_open(D)
+
+%% If doors belong to the same room, you can move between them
+can_move_between(D1, D2) if belongs_to(D1, R1), belongs_to(D2, R1)
+
+%% If an area and a door belong to the same room, you can travel between them
+can_move_between(A1, D1) if belongs_to(A1, R1), belongs_to(D1, R1)
+
+%% If an something O1 is on something O2, then O1 has the location of O2
+has_location(O1, L1) if is_on(O1, O2), has_location(O2, L1), 
+
+%% If an something O1 is on something O2, and O2 is on something O3, then O1 is above O3.
+above(O1, O3) if on(O1, O2), on(O2, O3)
+
+%% If O1 is above O2 and O2 is above O3 then O1 is above O3.
+above(O1,O3) if above(O1, O2), above(O2, O3)
+
+
+%% Rules to be added in
+%% Only can place on block on another block
+%% no block can be placed on a triangular block
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Executability constraints
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% do not plan to travel to where you are
+impossible travel(R, L) if has_location(R, L)
+
+%% robot can pick up an object if they are at same location
+impossible pick_up(R, O) if has_location(R, L1), has_location(O, L2), L1!=L2
+
+%% Cannot open door from a distance
+impossible open_door(R, D) if -has_location(R, D)
+
+%% Do not try to open a door if it is open
+impossible open_door(R,D) if is_open(D)
+
+%% We can't travel between areas that you can't move between
+impossible travel(R, L2) if -can_move_between(L1, L2), has_location(R, L1)
+
+%% cannot put down an object that is not being held
+impossible put_down(R, O) if -has_object(R, O)
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% AL ENDS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Not AL but here anyway
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% CWA for defined fluents and actions
+-holds(F, I) :- not holds(F, I), #defined_fluent(F)
+-occurs(A, I) :- not occurs(A, I)
+
+%% Inertial axioms
+holds(F, I+1) :- holds(F, I), not -holds(F, I+1), #inertial_fluent(F)
+-holds(F, I+1) :- -holds(F, I), not holds(F, I+1), #inertial_fluent(F)
+
+%% Any inertial fluent that does not hold initially is set to not hold
+-holds(F, 0) :- not holds(F, 0), #inertial_fluent(F)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
