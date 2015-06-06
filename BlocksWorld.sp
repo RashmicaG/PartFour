@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % constants
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#const numSteps = 5.
+#const numSteps = 3.
 #const numRooms = 2.
 #const numDoors = 1.
 #const numAreas = 5.
@@ -12,7 +12,8 @@
 #const numRobots = 0.
 #const n = 3.
 #const numTables = 2.
-#const numDishes = 1.
+#const numSurfaces = 4.
+#const numBlocks = 3. 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -32,8 +33,14 @@
 #person = [p][0..numPersons].
 #robot = [rob][0..numRobots].
 #table = [tab][0..numTables].
-#blocks = [block][0..numDishes].
+#blocks = [block][0..numBlocks].
 #object = {null} + #blocks + #table.
+
+%% Object Properties
+#size = {small, medium, large}.
+#colour = {red, green, blue, purple, white, black}.
+#shape = {cuboid, pyramid, sphere}.
+#surface = [s][0..numSurfaces].
 
 %% World hierachy
 #class = {entity_class, real_class, abstract_class, animate_class, controllable_class, inanimate_class, person_class, robot_class, 
@@ -42,7 +49,7 @@
 #controllable = #robot.
 #animate = #person + #controllable.
 #inanimate = #object +  #table.
-#location = #building + #floor+ #room + #door + #area.
+#location = #building + #floor+ #room + #door + #area + #surface.
 #real = #animate + #inanimate.
 #abstract = #location.
 #entity = #real + #abstract.
@@ -57,16 +64,17 @@
 %% Actions
 #exogenous_action = {test}.
 
-#agent_action = travel(#robot, #location) + pick_up(#robot, #object) + put_down(#robot, #object)
+#agent_action = travel(#robot, #location) + pick_up(#robot, #object) 
+                + put_down(#robot, #object, #location)
                  + open_door(#robot, #door).
 
 #action = #exogenous_action + #agent_action.
 
 %% Fluents
 #inertial_fluent = has_location(#real, #location) + has_object(#animate, #inanimate)
-                   + is_open(#door)  + is_on(#real, #real) + has_state(#real, #state).
+                   + is_open(#door)  + is_on(#real, #surface) + has_state(#real, #state).
 
-#defined_fluent = can_move_to(#animate, #location).
+#defined_fluent = can_move_to(#animate, #location) + is_above(#real, #real).
 
 #fluent = #inertial_fluent + #defined_fluent.
 
@@ -92,6 +100,13 @@ is_connected(#location, #location). %%logical
 success().
 goal(#step).
 something_happened(#step).
+
+%% Object Predicates
+has_size(#real, #size).
+has_colour(#real, #colour).
+has_shape(#real, #shape).
+has_surface(#real, #surface).
+
 
 %% Other Predicates
 holds(#fluent, #step).
@@ -179,11 +194,17 @@ holds(has_location(R,L2),I+1) :- occurs(travel(R, L2),I), #robot(R).
 %% %% robot can pick up an object
 holds(has_object(R, O),I+1) :- occurs(pick_up(R, O), I), #robot(R).
 
+
+%% If you pick up an object then it is no longer where it was
+-holds(is_on(O1, S2), I+1) :- occurs(pick_up(R, O1), I), holds(is_on(O1, S2), I), 
+                              #robot(R), has_surface(O2, S2).
+
 %% %% robot can put down an object
--holds(has_object(R, O),I+1) :- occurs(put_down(R,  O), I), #robot(R).
+-holds(has_object(R, O),I+1) :- occurs(put_down(R,  O, L), I), #robot(R).
 
 %% if a robot puts down an object at a location and there is already an object O2 there, O1 is on O2.
-holds(is_on(O1,O2), I+1) :- occurs(put_down(R,O),I), holds(has_location(R, L), I), holds(has_location(O2, L),I), #robot(R).
+ holds(is_on(O1,S2), I+1) :- occurs(put_down(R,O1, S2),I), holds(has_location(R, L), I), 
+                          holds(has_location(O2, L),I), has_surface(O2, S2), #robot(R).
 
 
 %% %% robot can open a door
@@ -209,6 +230,9 @@ holds(has_location(Th, L2),I) :- holds(has_location(Th, L1), I), belongs_to(L1, 
 
 %% if a animate being has an object, the objects location is that of the being  
 holds(has_location(O,L),I) :- holds(has_location(A,L), I), holds(has_object(A,O), I).
+
+%% If an animate has an object then the object is not on anything
+%% -holds(is_on(O1, O2), I) :- holds(has_object(A,O1), I), O1 != O2.
 
 
 %%If areas A1 and A2 are in the same room than they are connected
@@ -265,14 +289,26 @@ holds(can_move_to(R, A1), I) :- belongs_to(A1, R2), holds(has_location(R, R2), I
 -holds(has_state(R, S1), I) :- holds(has_state(R, S2), I), S1!=S2.
 
 %% If an something O1 is on something O2, then O1 has the location of O2
-holds(has_location(O1, L1), I) :- is_on(O1, O2), has_location(O2, L1).
+holds(has_location(O1, L1), I) :- holds(is_on(O1, S2),I), 
+                                holds(has_location(O2, L1), I),
+                               has_surface(O2, S2), O1!=O2.
 
 %% If an something O1 is on something O2, and O2 is on something O3, then O1 is above O3.
-holds(above(O1, O3),I) :- holds(on(O1, O2),I), holds(on(O2, O3), I).
+holds(is_above(O1, O3),I) :- holds(is_on(O1, S2),I), holds(is_on(O2, O3), I),
+                            has_surface(O2, S2), O1!=O2, O2!=O3, O1!=O3.
 
 %% If O1 is above O2 and O2 is above O3 then O1 is above O3.
-holds(above(O1,O3), I) :-  holds(above(O1, O2), I), holds(above(O2, O3),I). 
+holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I), 
+                              holds(is_above(O2, O3),I), O1!=O2, O2!=O3, O1!=O3. 
 
+%% an object cannot be on itself
+-holds(is_on(O1, S2), I) :- has_surface(O2, S2), O1 = O2.
+
+%% an object cannot be above itself
+-holds(is_above(O1, O2), I) :- O1 = O2.
+
+%% only one object can have a surface
+-has_surface(O2, S1) :- has_surface(O1, S1), O1!=O2.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -287,7 +323,7 @@ holds(above(O1,O3), I) :-  holds(above(O1, O2), I), holds(above(O2, O3),I).
                             L1!=L2,  #area(L1), #area(L2).
 
 %% cannot put down an object that is not being held
--occurs(put_down(R,  O),I) :- not holds(has_object(R, O),I).
+-occurs(put_down(R,  O, L),I) :- not holds(has_object(R, O),I).
 
 %% Cannot open door from a distance
 -occurs(open_door(R, D),I) :- -holds(has_location(R, D),I).
@@ -301,7 +337,8 @@ holds(above(O1,O3), I) :-  holds(above(O1, O2), I), holds(above(O2, O3),I).
 %% We can't travel between areas that you can't move between
 -occurs(travel(R, L2),I) :- -holds(can_move_to(R, L2),I),holds(has_location(R, L1),I), L1!=L2.
 
-
+%% cannot put down an object at location L if we aren't there
+ -occurs(put_down(R, O, L), I) :- -holds(has_location(R, L), I), #robot(R).
 
 
 
@@ -332,54 +369,49 @@ holds(F,I+1) :- #inertial_fluent(F),
 %% Planning Module
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% success :- goal(I).
-%%   :- not success.
+success :- goal(I).
+  :- not success.
 
                               
-%% %% Do not allow concurrent actions:
-%% :- occurs(A1,I),
-%%    occurs(A2,I),
-%%    A1 != A2.
+%% Do not allow concurrent actions:
+:- occurs(A1,I),
+   occurs(A2,I),
+   A1 != A2.
 
-%% %% An action occurs at each step before the goal is achieved:
-%% something_happened(I) :- occurs(A,I).
+%% An action occurs at each step before the goal is achieved:
+something_happened(I) :- occurs(A,I).
 
-%% %% %% Action Generation
-%% occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
+%% %% Action Generation
+occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
 
-%% :- #step(I),
-%%    not something_happened(I),
-%%    something_happened(I+1).
+:- #step(I),
+   not something_happened(I),
+   something_happened(I+1).
 
-%% %% Seat a person at a table
-%% goal(I) :- holds(has_state(p0, T),I), #table(T).
+%% Goal
+goal(I) :- holds(is_on(block2, s1), I).
 
-%% Clear a table
-%% goal(I) :- holds(table_state(tab0, available), I).
 
-%% Deliver an order
-%% goal(I) :- -holds(has_order(p0, pasta), I), -holds(has_object(rob0, dis1), I).
-%% goal(I) :- holds(has_location(dis0, a2), I).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Explanation Module
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% %% %% Take what actually happened into account:
-occurs(A,I) :- hpd(A,I).
+%% %% %% %% Take what actually happened into account:
+%% occurs(A,I) :- hpd(A,I).
 
-%% Reality Check 
-:- obs(F,true,I), -holds(F,I).
-:- obs(F,false,I), holds(F,I).
+%% %% Reality Check 
+%% :- obs(F,true,I), -holds(F,I).
+%% :- obs(F,false,I), holds(F,I).
 
-expl(A,I) :- #exogenous_action(A),
-             occurs(A,I),
-             not hpd(A,I).
+%% expl(A,I) :- #exogenous_action(A),
+%%              occurs(A,I),
+%%              not hpd(A,I).
 
-%%   MINIMAL EXPLANATIONS:                            
-occurs(A,K) :+ #exogenous_action(A),
-              K >= (numSteps-3), K < numSteps.
+%% %%   MINIMAL EXPLANATIONS:                            
+%% occurs(A,K) :+ #exogenous_action(A),
+%%               K >= (numSteps-3), K < numSteps.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -402,7 +434,32 @@ occurs(A,K) :+ #exogenous_action(A),
 %%  Initial location of robot 
 holds(has_location(rob0, a0), 0).
 
+%% Initial scene description
+has_size(block0, small).
+has_colour(block0, red).
+has_shape(block0, cuboid).
+has_surface(block0, s0).
+
+has_size(block1, small).
+has_colour(block1, purple).
+has_shape(block1, cuboid).
+has_surface(block1, s1).
+
+has_size(block2, small).
+has_colour(block2, purple).
+has_shape(block2, cuboid).
+has_surface(block2, s2).
+
+has_surface(tab0, s4).
+
 %% Initial location of table and blocks
 holds(has_location(tab0, a0), 0).
-holds(has_location(block0, tab0), 0).
-holds(is_on(block1, block0), 0).
+holds(is_on(block0, s4), 0).
+holds(is_on(block1, s4), 0).
+holds(is_on(block2, s4), 0).
+
+%% Testing
+occurs(pick_up(rob0,block2),0).
+%% -holds(has_object(rob0, block2), 3).
+%% holds(is_on(block2, tab0), 3).
+%% occurs(put_down(rob0,block2, s1),1).

@@ -60,7 +60,7 @@ is_connected(#location, #location)  %% is physically connected
 has_location(#thing, #location)
 has_object(#animate, #inanimate)
 is_open(#door)
-is_on(#thing, #thing)
+is_on(#real, #surface)
 
 %% Defined Fluents
 can_move_between(#location, #location) %% is actually accessible at this point in time
@@ -71,7 +71,7 @@ can_move_between(#location, #location) %% is actually accessible at this point i
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 travel(#animate, #location)
 pick_up(#animate, #object)
-put_down(#animate, #object)
+put_down(#animate, #object, #location)
 open_door(#animate, #door)
 
 
@@ -85,11 +85,14 @@ travel(R, L2) causes has_location(R, L2)
 %% robot can pick up an object
 pick_up(R, O) causes has_object(R, O)
 
+%% If you pick up an object then it is no longer where it was
+pick_up(R,O1) causes -is_on(O1, S2) @ I+1 if is_on(O1, S2) @I, has_surface(O2, S2)
+
 %% robot can put down an object
-put_down_object(R, O) causes -has_object(R, O)
+put_down_object(R, O, L) causes -has_object(R, O)
 
 %% if a robot puts down an object at a location and there is already an object O2 there, O1 is on O2.
-put_down_object(R,O) causes is_on(O1,O2) if has_location(Robot, L), has_location(O2, L)
+put_down_object(R,O, S2) causes is_on(O1,S2) if has_location(Robot, L), has_location(O2, L), has_surface(O2, S2)
 
 %% robot can open a door
 open_door(R, D) causes is_open(D)
@@ -107,6 +110,9 @@ has_location(Th, L2) if has_location(Th, L1), belongs_to(L1, L2)
 
 %% if a animate being has an object, the object's location is that of the being
 has_location(O,L) if has_location(A,L), has_object(A,O)
+
+%% If an animate has an object then the object is not where it used to be 
+%% -is_on(O1, S2) if has_object(A,O1), has_surface(O2, S2)
 
 %% If areas are in the same room, then they are connected
 is_connected(A1, A2) if belongs_to(A1, R1), belongs_to(A2, R1)
@@ -133,7 +139,7 @@ can_move_between(D1, D2) if belongs_to(D1, R1), belongs_to(D2, R1)
 can_move_between(A1, D1) if belongs_to(A1, R1), belongs_to(D1, R1)
 
 %% If an something O1 is on something O2, then O1 has the location of O2
-has_location(O1, L1) if is_on(O1, O2), has_location(O2, L1), 
+has_location(O1, L1) if is_on(O1, S2), has_location(O2, L1), has_surface(O2, S2)
 
 %% If an something O1 is on something O2, and O2 is on something O3, then O1 is above O3.
 above(O1, O3) if on(O1, O2), on(O2, O3)
@@ -141,10 +147,20 @@ above(O1, O3) if on(O1, O2), on(O2, O3)
 %% If O1 is above O2 and O2 is above O3 then O1 is above O3.
 above(O1,O3) if above(O1, O2), above(O2, O3)
 
+%% a object cannot be on itself
+-is_on(O1, S2) if has_surface(O2, S2), O1 = O2
+
+%% a object cannot be above itself
+-above(O1, O2) is O1 = O2
+
+%% only one object can have a surface
+-has_surface(O2, S1) if has_surface(O1, S1)
+
 
 %% Rules to be added in
 %% Only can place on block on another block
 %% no block can be placed on a triangular block
+%% A table is not a movable object?
 
 
 
@@ -168,7 +184,10 @@ impossible open_door(R,D) if is_open(D)
 impossible travel(R, L2) if -can_move_between(L1, L2), has_location(R, L1)
 
 %% cannot put down an object that is not being held
-impossible put_down(R, O) if -has_object(R, O)
+impossible put_down(R, O, L) if -has_object(R, O)
+
+%% cannot put down an object at location L if we aren't there
+impossible put_down(R, O, L) if -has_location(R, L)
 
 
 
