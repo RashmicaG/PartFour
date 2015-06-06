@@ -34,7 +34,7 @@
 #robot = [rob][0..numRobots].
 #table = [tab][0..numTables].
 #blocks = [block][0..numBlocks].
-#object = {null} + #blocks + #table.
+#object =  #blocks + #table.
 
 %% Object Properties
 #size = {small, medium, large}.
@@ -311,6 +311,7 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 -has_surface(O2, S1) :- has_surface(O1, S1), O1!=O2.
 
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Executability constraints
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -321,6 +322,9 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 %% robot cannot pick up an object if it is not at the objects location
 -occurs(pick_up(R, O),I) :- holds(has_location(R, L1), I), holds(has_location(O, L2), I),
                             L1!=L2,  #area(L1), #area(L2).
+
+%% robot cannot pick up an object if they have it 
+-occurs(pick_up(R,O), I) :-  holds(has_object(R,O), I), #robot(R).
 
 %% cannot put down an object that is not being held
 -occurs(put_down(R,  O, L),I) :- not holds(has_object(R, O),I).
@@ -338,8 +342,12 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 -occurs(travel(R, L2),I) :- -holds(can_move_to(R, L2),I),holds(has_location(R, L1),I), L1!=L2.
 
 %% cannot put down an object at location L if we aren't there
- -occurs(put_down(R, O, L), I) :- -holds(has_location(R, L), I), #robot(R).
+ -occurs(put_down(R, O, S), I) :- has_surface(O2, S), holds(has_location(O2, L),I),
+                                -holds(has_location(R, L), I), #robot(R).
 
+%% cannot put down an object at location L if we aren't there
+ %% -occurs(put_down(R, O, S), I) :- has_surface(O2, S), holds(has_location(O2, L),I),
+                                %% holds(has_location(R, L), I), #robot(R), #area(L).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -463,3 +471,5 @@ occurs(pick_up(rob0,block2),0).
 %% -holds(has_object(rob0, block2), 3).
 %% holds(is_on(block2, tab0), 3).
 %% occurs(put_down(rob0,block2, s1),1).
+ %% occurs(travel(rob0,d1),1).
+  %% occurs(put_down(rob0,block2,s1),2).

@@ -174,6 +174,9 @@ impossible travel(R, L) if has_location(R, L)
 %% robot can pick up an object if they are at same location
 impossible pick_up(R, O) if has_location(R, L1), has_location(O, L2), L1!=L2
 
+%% robot cannot pick up an object if they have it 
+impossible pickup(R,O) if has_object(R,O)
+
 %% Cannot open door from a distance
 impossible open_door(R, D) if -has_location(R, D)
 
