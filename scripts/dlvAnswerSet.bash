@@ -4,7 +4,7 @@ INPUTFILE=$1
 OUTPUTFILE=$2
 
 #SPARC TO ASP
-java -jar ~/Documents/PartFour/sparc.jar ~/Documents/PartFour/sparcFiles/$INPUTFILE  -solver dlv  #-A  -solveropts "-pfilter=occurs" -o ~/Documents/UniSummerWork/outputFiles/asp.txt > ~/Documents/UniSummerWork/outputFiles/output.txt
+java -jar ~/Documents/PartFour/sparc.jar ~/Documents/PartFour/$INPUTFILE  -solver dlv  -A  -solveropts "-pfilter=occurs" -o ~/Documents/PartFour/OutputFiles/asp.txt > ~/Documents/PartFour/OutputFiles/output.txt
 
 
 #-solveropts "-cautious"
