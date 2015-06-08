@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % constants
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#const numSteps = 3.
+#const numSteps = 4.
 #const numRooms = 2.
 #const numDoors = 1.
 #const numAreas = 5.
@@ -350,6 +350,10 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
                                 %% holds(has_location(R, L), I), #robot(R), #area(L).
 
 
+%% robot can only hold one object at a time
+-occurs(pick_up(R, O1),I) :-  holds(has_object(R,O2), I), #robot(R), O1!=O2.
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Fluent and Action Rules
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -396,8 +400,9 @@ occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
    not something_happened(I),
    something_happened(I+1).
 
+
 %% Goal
-goal(I) :- holds(is_on(block2, s1), I).
+goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s1), I).
 
 
 
@@ -455,8 +460,13 @@ has_surface(block1, s1).
 
 has_size(block2, small).
 has_colour(block2, purple).
-has_shape(block2, cuboid).
+has_shape(block2, pyramid).
 has_surface(block2, s2).
+
+has_size(block3, small).
+has_colour(block3, purple).
+has_shape(block3, pyramid).
+has_surface(block3, s3).
 
 has_surface(tab0, s4).
 
@@ -465,11 +475,16 @@ holds(has_location(tab0, a0), 0).
 holds(is_on(block0, s4), 0).
 holds(is_on(block1, s4), 0).
 holds(is_on(block2, s4), 0).
+holds(is_on(block3, s4), 0).
 
 %% Testing
-occurs(pick_up(rob0,block2),0).
-%% -holds(has_object(rob0, block2), 3).
-%% holds(is_on(block2, tab0), 3).
+ %% occurs(pick_up(rob0,block2),0).
 %% occurs(put_down(rob0,block2, s1),1).
+
+%% occurs(pick_up(rob0,block3),2).
+%% occurs(put_down(rob0,block3, s1),3).
+
+
+
  %% occurs(travel(rob0,d1),1).
   %% occurs(put_down(rob0,block2,s1),2).

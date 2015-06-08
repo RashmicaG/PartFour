@@ -52,6 +52,12 @@ belongs_to(L1, L3) if belongs_to(L1, L2), belongs_to(L2, L3), is_subclass(L2, L3
 belongs_to(#location, #location)  %% rooms consist of areas and doors, floors consist of rooms, buildings consist of floors
 is_connected(#location, #location)  %% is physically connected
 
+%% Object Predicates
+has_size(#real, #size)
+has_colour(#real, #colour)
+has_shape(#real, #shape)
+has_surface(#real, #surface)
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Fluents
@@ -61,9 +67,11 @@ has_location(#thing, #location)
 has_object(#animate, #inanimate)
 is_open(#door)
 is_on(#real, #surface)
+has_state(#real, #state)
 
 %% Defined Fluents
-can_move_between(#location, #location) %% is actually accessible at this point in time
+can_move_to(#animate, #location) 
+is_above(#real, #real)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -81,6 +89,7 @@ open_door(#animate, #door)
 
 %% robot can travel to a location
 travel(R, L2) causes has_location(R, L2)
+travel(R, L2) causes -has_location(R, L1) @I+1 if has_location(R,L1) @ I
 
 %% robot can pick up an object
 pick_up(R, O) causes has_object(R, O)
@@ -111,9 +120,6 @@ has_location(Th, L2) if has_location(Th, L1), belongs_to(L1, L2)
 %% if a animate being has an object, the object's location is that of the being
 has_location(O,L) if has_location(A,L), has_object(A,O)
 
-%% If an animate has an object then the object is not where it used to be 
-%% -is_on(O1, S2) if has_object(A,O1), has_surface(O2, S2)
-
 %% If areas are in the same room, then they are connected
 is_connected(A1, A2) if belongs_to(A1, R1), belongs_to(A2, R1)
 
@@ -135,8 +141,23 @@ can_move_between(R1, R2) if is_connected(R1, R2), is_open(D)
 %% If doors belong to the same room, you can move between them
 can_move_between(D1, D2) if belongs_to(D1, R1), belongs_to(D2, R1)
 
+%% If an area and a door belong to the same room, you can travel to the door
+can_move_to(R, D1) if belongs_to(A1, R1), is_connected(D1, R1), has_location(R, A1)
+
+%% If an room and a door belong to the same room, you can travel to the door
+can_move_to(R, D1) if  is_connected(D1, R1), has_location(R, R1)
+
 %% If an area and a door belong to the same room, you can travel between them
 can_move_between(A1, D1) if belongs_to(A1, R1), belongs_to(D1, R1)
+
+%% If a room and a door belong to the same room, you can travel from a door
+can_move_to(R, R1) if is_connected(D1, R1), has_location(R, D1), is_open(D1)
+
+%% If you are in a room R2 and A1 is directly in R2, you can travel to A1 directly.
+can_move_to(R, A1) if belongs_to(A1, R2), has_location(R, R2)
+
+%% Real things can only have 1 state at a time - inertial_fluent
+-has_state(R, S1) if has_state(R, S2), S1!=S2
 
 %% If an something O1 is on something O2, then O1 has the location of O2
 has_location(O1, L1) if is_on(O1, S2), has_location(O2, L1), has_surface(O2, S2)
@@ -177,8 +198,14 @@ impossible pick_up(R, O) if has_location(R, L1), has_location(O, L2), L1!=L2
 %% robot cannot pick up an object if they have it 
 impossible pickup(R,O) if has_object(R,O)
 
+%% cannot put down an object that is not being held
+impossible put_down(R,  O, L)if  not has_object(R, O)
+
 %% Cannot open door from a distance
 impossible open_door(R, D) if -has_location(R, D)
+
+%%Don't plan to open a door when you don't where the agent is
+impossible open_door(R, D) if not has_location(R, D)
 
 %% Do not try to open a door if it is open
 impossible open_door(R,D) if is_open(D)
@@ -189,8 +216,9 @@ impossible travel(R, L2) if -can_move_between(L1, L2), has_location(R, L1)
 %% cannot put down an object that is not being held
 impossible put_down(R, O, L) if -has_object(R, O)
 
-%% cannot put down an object at location L if we aren't there
-impossible put_down(R, O, L) if -has_location(R, L)
+
+%% robot can only hold one object at a time
+impossible pick_up(R,O1) if has_object(R,O2)
 
 
 
