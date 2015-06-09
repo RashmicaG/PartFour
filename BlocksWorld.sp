@@ -231,9 +231,6 @@ holds(has_location(Th, L2),I) :- holds(has_location(Th, L1), I), belongs_to(L1, 
 %% if a animate being has an object, the objects location is that of the being  
 holds(has_location(O,L),I) :- holds(has_location(A,L), I), holds(has_object(A,O), I).
 
-%% If an animate has an object then the object is not on anything
-%% -holds(is_on(O1, O2), I) :- holds(has_object(A,O1), I), O1 != O2.
-
 
 %%If areas A1 and A2 are in the same room than they are connected
 is_connected(A1, A2) :- belongs_to(A1, R), belongs_to(A2, R), #area(A1), #area(A2),
@@ -276,7 +273,7 @@ holds(can_move_to(R, A1),I) :- belongs_to(A1, R1), is_connected(D1, R1), #door(D
                                #room(R1), #area(A1), holds(has_location(R, D1),I),
                                holds(is_open(D1), I).
 
-%% If an area and a door belong to the same room, you can travel from a door
+%% If a room and a door belong to the same room, you can travel from a door
 holds(can_move_to(R, R1),I) :- is_connected(D1, R1), #door(D1), #room(R1),
                                holds(has_location(R, D1),I), holds(is_open(D1), I) .
 
@@ -349,10 +346,8 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
  %% -occurs(put_down(R, O, S), I) :- has_surface(O2, S), holds(has_location(O2, L),I),
                                 %% holds(has_location(R, L), I), #robot(R), #area(L).
 
-
 %% robot can only hold one object at a time
--occurs(pick_up(R, O1),I) :-  holds(has_object(R,O2), I), #robot(R), O1!=O2.
-
+-occurs(pick_up(R, O1),I) :- holds(has_object(R,O2), I), #robot(R), O1!=O2.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Fluent and Action Rules
@@ -400,9 +395,8 @@ occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
    not something_happened(I),
    something_happened(I+1).
 
-
 %% Goal
-goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s1), I).
+goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).
 
 
 
@@ -460,7 +454,7 @@ has_surface(block1, s1).
 
 has_size(block2, small).
 has_colour(block2, purple).
-has_shape(block2, pyramid).
+has_shape(block2, cuboid).
 has_surface(block2, s2).
 
 has_size(block3, small).
@@ -478,13 +472,9 @@ holds(is_on(block2, s4), 0).
 holds(is_on(block3, s4), 0).
 
 %% Testing
- %% occurs(pick_up(rob0,block2),0).
+occurs(pick_up(rob0,block2),0).
+%% -holds(has_object(rob0, block2), 3).
+%% holds(is_on(block2, tab0), 3).
 %% occurs(put_down(rob0,block2, s1),1).
-
-%% occurs(pick_up(rob0,block3),2).
-%% occurs(put_down(rob0,block3, s1),3).
-
-
-
  %% occurs(travel(rob0,d1),1).
   %% occurs(put_down(rob0,block2,s1),2).
