@@ -11,7 +11,7 @@
 #const numPersons = 1.
 #const numRobots = 0.
 #const n = 3.
-#const numTables = 2.
+#const numTables = 0.
 #const numSurfaces = 4.
 #const numBlocks = 3. 
 
@@ -65,7 +65,7 @@
 #exogenous_action = {test}.
 
 #agent_action = travel(#robot, #location) + pick_up(#robot, #object) 
-                + put_down(#robot, #object, #location)
+                + put_down(#robot, #object, #surface)
                  + open_door(#robot, #door).
 
 #action = #exogenous_action + #agent_action.
@@ -213,8 +213,6 @@ holds(is_open(D),I+1) :- occurs(open_door(R, D), I).
 
 
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% State constraints
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -309,6 +307,8 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 
 
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Executability constraints
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -342,12 +342,9 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
  -occurs(put_down(R, O, S), I) :- has_surface(O2, S), holds(has_location(O2, L),I),
                                 -holds(has_location(R, L), I), #robot(R).
 
-%% cannot put down an object at location L if we aren't there
- %% -occurs(put_down(R, O, S), I) :- has_surface(O2, S), holds(has_location(O2, L),I),
-                                %% holds(has_location(R, L), I), #robot(R), #area(L).
-
 %% robot can only hold one object at a time
--occurs(pick_up(R, O1),I) :- holds(has_object(R,O2), I), #robot(R), O1!=O2.
+-occurs(pick_up(R, O1),I) :-  holds(has_object(R,O2), I), #robot(R), O1!=O2.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Fluent and Action Rules
@@ -395,8 +392,11 @@ occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
    not something_happened(I),
    something_happened(I+1).
 
+
 %% Goal
+%% goal(I) :- holds(is_on(block3, s1), I).
 goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).
+%% goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).
 
 
 
@@ -442,6 +442,8 @@ goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).
 holds(has_location(rob0, a0), 0).
 
 %% Initial scene description
+%% holds(has_state(d1, closed), 0).
+
 has_size(block0, small).
 has_colour(block0, red).
 has_shape(block0, cuboid).
@@ -454,7 +456,7 @@ has_surface(block1, s1).
 
 has_size(block2, small).
 has_colour(block2, purple).
-has_shape(block2, cuboid).
+has_shape(block2, pyramid).
 has_surface(block2, s2).
 
 has_size(block3, small).
@@ -472,9 +474,14 @@ holds(is_on(block2, s4), 0).
 holds(is_on(block3, s4), 0).
 
 %% Testing
-occurs(pick_up(rob0,block2),0).
-%% -holds(has_object(rob0, block2), 3).
-%% holds(is_on(block2, tab0), 3).
+%% occurs(pick_up(rob0,block2),0).
+%% holds(is_on(block2, s1), 1).
 %% occurs(put_down(rob0,block2, s1),1).
+
+%% occurs(pick_up(rob0,block3),2).
+%% occurs(put_down(rob0,block3, s1),3).
+
+
+
  %% occurs(travel(rob0,d1),1).
   %% occurs(put_down(rob0,block2,s1),2).
