@@ -28,6 +28,10 @@ class Block{
 		void setBlockSize(block_size b_size){size = b_size};
 		void setBlockColour(block_colour b_colour){colour = b_colour};
 }
+//Constructors
+Block::Block(block_status stat, block_shape shap, block_size siz, block_colour col): status(stat), shape(shap), size(siz), colour(col){}
+Block::Block(Block supporting,block_status, block_shape, block_size, block_colour): supporting_block(supporting), status(stat), shape(shap), size(siz), colour(col){}
+
 class State_Action{
 	float Q_value;
 	float transition_probablity;
@@ -47,26 +51,33 @@ class State_Action{
 		void setQValue(float value){ Q_value = value};
 		void setTransitionProbablity(float tp_value){transition_probablity = tp_value};
 }
-
+//Constructors
+State_Action::State_Action(float Q_val, float trans_prob, Block block, Action act, State state): Q_value(Q_val), transition_probablity(trans_prob), 
+actionable_block(block), action(act), nextState(state) {}
 
 class Configuration{
 	// Actionable blocks are any block that you can pickup and put down. 
 	// Does not contain block that has a block on top of it.
 	int num_actionable_blocks; 
-	Block actionable_blocks[num_actionable_blocks];
+	Block* actionable_blocks;
 	public:
+		//Constructors
 		Configuration(int, Block*);
 		//Getters
 		int getNumActionableBlocks(){return num_actionable_blocks);
 		Block* getActionableBlockArray(){return actionable_blocks};
 		
 }
+//Constructors
+Configuration::Configuration(int numBlocks, Block* blockArray): num_actionable_blocks(numBlocks), actionable_blocks = blockArray{}
+
 
 class State{
 	Configuration block_configuration;
 	float reward;
 	State_Action actions[];
 	public:
+		//Constructors
 		State(Configuration, float, int, State_Action);
 		//getter
 		Configuration getBlockConfiguration(){return block_configuration};
@@ -75,6 +86,11 @@ class State{
 		//setter
 		void setReward(float r){reward = r};
 }
+//Constructors
+State::state(Configuration lastConfig, float rew, int, State_Action act): reward(rew){
+	//Work out next state
+}
+
 class MDP{
 	State initial_state;
 }
