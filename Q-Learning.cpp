@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stddef.h>
 #include <vector>
-
+#include <stdlib.h>
 
 using namespace std;
 
@@ -45,30 +45,28 @@ Block::Block(){}
 Block::Block(block_status stat, block_shape shap, block_size siz, block_colour col): status(stat), shape(shap), size(siz), colour(col){}
 Block::Block(Block* supporting,block_status stat, block_shape shap, block_size siz, block_colour col): supporting_block(supporting), status(stat), shape(shap), size(siz), colour(col){}
 
-//class State_Action{
-	//float Q_value;
-	//float transition_probablity;
-	//Block actionable_block;
-	//Action action;
-	//State* nextState;
-	//public:
-		//// Constructor
-		//State_Action();
-		//State_Action(float, float, Block, Action, State*);
-		//// Getters
-		//float getQValue(){return Q_value;}
-		//float getTransitionProbablity(){return transition_probablity;}
-		//Block getActionableBlock(){return actionable_block;}
-		//Action getAction(){return action;}
-		//State* getNextState(){return nextState;}
-		//// Setters
-		//void setQValue(float value){ Q_value = value;}
-		//void setTransitionProbablity(float tp_value){transition_probablity = tp_value;}
-//};
-////Constructors
-//State_Action::State_Action(){}
-//State_Action::State_Action(float Q_val, float trans_prob, Block block, Action act, State* state): Q_value(Q_val), transition_probablity(trans_prob), 
-//actionable_block(block), action(act), nextState(state) {}
+class State_Action{
+	float Q_value;
+	float transition_probablity;
+	Block actionable_block;
+	Action action;
+	public:
+		// Constructor
+		State_Action();
+		State_Action(float, float, Block, Action);
+		// Getters
+		float getQValue(){return Q_value;}
+		float getTransitionProbablity(){return transition_probablity;}
+		Block getActionableBlock(){return actionable_block;}
+		Action getAction(){return action;}
+//		State* getNextState(){return nextState;}
+		// Setters
+		void setQValue(float value){ Q_value = value;}
+		void setTransitionProbablity(float tp_value){transition_probablity = tp_value;}
+};
+//Constructors
+State_Action::State_Action(float Q_val, float trans_prob, Block block, Action act): Q_value(Q_val), transition_probablity(trans_prob), 
+actionable_block(block), action(act){}
 
 class Configuration{
 	// Actionable blocks are any block that you can pickup and put down. 
@@ -90,27 +88,28 @@ Configuration::Configuration(int numBlocks, vector<Block>* blockArray){
 }
 
 
-//class State{
-	//Configuration block_configuration;
-	//float reward;
+class State{
+	Configuration block_configuration;
+	float reward;
 	//State_Action prev_action;
-	//State_Action* actions;
-	//int num_actions;
-	//public:
-		////Constructors
-		//State(Configuration, State_Action*, float, int);
-		//State(Configuration, float, int, State_Action, State_Action*);
-		////getter
-		//Configuration getBlockConfiguration(){return block_configuration;}
-		//float getReward(){return reward;}
-		//State_Action* getStateActions(){return actions;} 
-		////setter
-		//void setReward(float r){reward = r;}
-//};
-////Constructors
-//State::State(){}
-//State::State(Configuration init_config, State_Action* act, float rew, int n_actions): block_configuration(init_config), actions(act), reward(rew), num_actions(n_actions){}
-//State::State(Configuration lastConfig, float rew, int n_actions, State_Action previous_act, State_Action* act): reward(rew), prev_action(previous_act), num_actions(n_actions){}
+	vector<State_Action>* actions;
+	//vector<State> next_states;
+	int num_actions;
+	public:
+		//Constructors
+		State();
+		State(Configuration, vector<State_Action>*, float, int); // Initial State
+		State(Configuration, float, int, State_Action, State_Action*); // State after a transition
+		//getter
+		Configuration getBlockConfiguration(){return block_configuration;}
+		float getReward(){return reward;}
+		vector<State_Action>* getStateActions(){return actions;} 
+		//setter
+		void setReward(float r){reward = r;}
+};
+//Constructors
+State::State(Configuration init_config, vector<State_Action>* act, float rew, int n_actions): block_configuration(init_config), actions(act), reward(rew), num_actions(n_actions){}
+//State::State(Configuration lastConfig, float rew, int n_actions, State_Action previous_act, vector<State_Action>* act): block_configuration(init_config), reward(rew), num_actions(n_actions), prev_action(previous_act), actions(act){}
 
 //class MDP{
 	////State initial_state;
@@ -125,11 +124,18 @@ Configuration::Configuration(int numBlocks, vector<Block>* blockArray){
 
 int main (){
 //  new MDP();
-	vector<Block> block_array(1, Block(ON_TABLE, CUBOID, MEDIUM, RED));
-	block_array.push_back(Block(&block_array[0],ON_BLOCK, CUBOID, MEDIUM, RED));
-	block_array.push_back(Block(ON_TABLE, PRISM, LARGE, GREEN));
-	block_array.push_back(Block(ON_TABLE, CUBE, SMALL, BLUE));
+	vector<Block> block_vector(1, Block(ON_TABLE, CUBOID, MEDIUM, RED));
+	block_vector.push_back(Block(ON_TABLE, CUBOID, SMALL, BLUE));
+	block_vector.push_back(Block(ON_TABLE, PRISM, LARGE, GREEN));
+	block_vector.push_back(Block(ON_TABLE, CUBE, SMALL, RED));
+	vector<State_Action> action;
+	Configuration config(block_vector.size(), &block_vector);
 	
-	Configuration config(block_array.size(), &block_array);
-	cout<<config.getActionableBlockArray()->at(1).getBlockStatus()<<endl;
+	for (int i=0; i<4; i++){
+		float Q_val = 1.5;
+		float trans_prob = 0.25;
+		Action act = Action((bool)rand%2);
+		action.push_back(State_Action(Q_val, trans_prob, block_vector.at(i), act));
+	}
+	State initstate(config, &action, 2, action.size());
 }
