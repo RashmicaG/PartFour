@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stddef.h>
+#include <vector>
 
 
 using namespace std;
@@ -33,97 +34,102 @@ class Block{
 		block_shape getBlockShape(){return shape;}
 		block_size getBlockSize(){return size;}
 		block_colour getBlockColour(){return colour;}
+		Block* getSupportingBlock(){return supporting_block;}
 		//Setters
-		void setBlockStatus(block_status b_status){status = b_status;}		
-		void setBlockShape(block_shape b_shape){shape = b_shape;}
-		void setBlockSize(block_size b_size){size = b_size;}
-		void setBlockColour(block_colour b_colour){colour = b_colour;}
+		void setBlockStatus(block_status b_status){status = b_status;}
+		//Initializers
+		//void 
 };
 //Constructors
+Block::Block(){}
 Block::Block(block_status stat, block_shape shap, block_size siz, block_colour col): status(stat), shape(shap), size(siz), colour(col){}
 Block::Block(Block* supporting,block_status stat, block_shape shap, block_size siz, block_colour col): supporting_block(supporting), status(stat), shape(shap), size(siz), colour(col){}
 
-class State_Action{
-	float Q_value;
-	float transition_probablity;
-	Block actionable_block;
-	Action action;
-	State* nextState;
-	public:
-		// Constructor
-		State_Action();
-		State_Action(float, float, Block, Action, State*);
-		// Getters
-		float getQValue(){return Q_value;}
-		float getTransitionProbablity(){return transition_probablity;}
-		Block getActionableBlock(){return actionable_block;}
-		Action getAction(){return action;}
-		State* getNextState(){return nextState;}
-		// Setters
-		void setQValue(float value){ Q_value = value;}
-		void setTransitionProbablity(float tp_value){transition_probablity = tp_value;}
-};
-//Constructors
-State_Action::State_Action(float Q_val, float trans_prob, Block block, Action act, State* state): Q_value(Q_val), transition_probablity(trans_prob), 
-actionable_block(block), action(act), nextState(state) {}
+//class State_Action{
+	//float Q_value;
+	//float transition_probablity;
+	//Block actionable_block;
+	//Action action;
+	//State* nextState;
+	//public:
+		//// Constructor
+		//State_Action();
+		//State_Action(float, float, Block, Action, State*);
+		//// Getters
+		//float getQValue(){return Q_value;}
+		//float getTransitionProbablity(){return transition_probablity;}
+		//Block getActionableBlock(){return actionable_block;}
+		//Action getAction(){return action;}
+		//State* getNextState(){return nextState;}
+		//// Setters
+		//void setQValue(float value){ Q_value = value;}
+		//void setTransitionProbablity(float tp_value){transition_probablity = tp_value;}
+//};
+////Constructors
+//State_Action::State_Action(){}
+//State_Action::State_Action(float Q_val, float trans_prob, Block block, Action act, State* state): Q_value(Q_val), transition_probablity(trans_prob), 
+//actionable_block(block), action(act), nextState(state) {}
 
 class Configuration{
 	// Actionable blocks are any block that you can pickup and put down. 
 	// Does not contain block that has a block on top of it.
-	int num_actionable_blocks; 
-	Block* actionable_blocks;
+	vector<Block> actionable_blocks;
 	public:
 		//Constructors
-		Configuration();
-		Configuration(int, Block*);
+		Configuration(int, vector<Block>*);
 		//Getters
-		int getNumActionableBlocks(){return num_actionable_blocks;}
-		Block* getActionableBlockArray(){return actionable_blocks;}
+		int getNumActionableBlocks(){return actionable_blocks.size();}
+		vector<Block>* getActionableBlockArray(){return &actionable_blocks;}
 		
 };
 //Constructors
-Configuration::Configuration(int numBlocks, Block* blockArray): num_actionable_blocks(numBlocks){
-	Block array[num_actionable_blocks];
-	for (int i=0; i<num_actionable_blocks; i++){
-		array[i] = blockArray[i];
+Configuration::Configuration(int numBlocks, vector<Block>* blockArray){
+	for (int i=0; i<numBlocks; i++){
+		actionable_blocks.push_back(blockArray->at(i));
 	}
-	actionable_blocks = array;
 }
 
 
-class State{
-	Configuration block_configuration;
-	float reward;
-	State_Action prev_action;
-	State_Action* actions;
-	int num_actions;
-	public:
-		//Constructors
-		State(Configuration, State_Action*, float, int);
-		State(Configuration, float, int, State_Action, State_Action*);
-		//getter
-		Configuration getBlockConfiguration(){return block_configuration;}
-		float getReward(){return reward;}
-		State_Action* getStateActions(){return actions;} 
-		//setter
-		void setReward(float r){reward = r;}
-};
-//Constructors
-State::State(Configuration init_config, State_Action* act, float rew, int n_actions): block_configuration(init_config), actions(act), reward(rew), num_actions(n_actions){}
-State::State(Configuration lastConfig, float rew, int n_actions, State_Action previous_act, State_Action* act): reward(rew), prev_action(previous_act), num_actions(n_actions){}
+//class State{
+	//Configuration block_configuration;
+	//float reward;
+	//State_Action prev_action;
+	//State_Action* actions;
+	//int num_actions;
+	//public:
+		////Constructors
+		//State(Configuration, State_Action*, float, int);
+		//State(Configuration, float, int, State_Action, State_Action*);
+		////getter
+		//Configuration getBlockConfiguration(){return block_configuration;}
+		//float getReward(){return reward;}
+		//State_Action* getStateActions(){return actions;} 
+		////setter
+		//void setReward(float r){reward = r;}
+//};
+////Constructors
+//State::State(){}
+//State::State(Configuration init_config, State_Action* act, float rew, int n_actions): block_configuration(init_config), actions(act), reward(rew), num_actions(n_actions){}
+//State::State(Configuration lastConfig, float rew, int n_actions, State_Action previous_act, State_Action* act): reward(rew), prev_action(previous_act), num_actions(n_actions){}
 
-class MDP{
-	//State initial_state;
-	Block block_array[3];
-	public:
-	MDP(){
-		Block block_array[0] = new Block(ON_TABLE, CUBOID, MEDIUM, RED); 
-		block_array[1] = new Block(ON_TABLE, CUBOID, MEDIUM, RED);
-		//Block block_array[2] = new Block(ON_TABLE, CUBOID, MEDIUM, RED);
-		//Configuration config = new Configuration(3, block_array);
-	}
-};
+//class MDP{
+	////State initial_state;
+	////Block block[3];
+	//public:
+	//MDP(){
+		////Block block_array[0] = new Block(ON_TABLE, CUBOID, MEDIUM, RED); 
+	
+		////Configuration config = new Configuration(3, block_array);
+	//}
+//};
 
 int main (){
-  new MDP();
+//  new MDP();
+	vector<Block> block_array(1, Block(ON_TABLE, CUBOID, MEDIUM, RED));
+	block_array.push_back(Block(&block_array[0],ON_BLOCK, CUBOID, MEDIUM, RED));
+	block_array.push_back(Block(ON_TABLE, PRISM, LARGE, GREEN));
+	block_array.push_back(Block(ON_TABLE, CUBE, SMALL, BLUE));
+	
+	Configuration config(block_array.size(), &block_array);
+	cout<<config.getActionableBlockArray()->at(1).getBlockStatus()<<endl;
 }
