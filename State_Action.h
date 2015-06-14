@@ -4,10 +4,9 @@
 #include <stddef.h>
 #include <vector>
 #include <stdlib.h>
+#include "Constants.h"
+#include "Block.h"
 using namespace std;
-
-enum Destination{DEST_ON_TABLE, DEST_ON_ARM, DEST_ON_BLOCK};
-enum Action{PICK_UP, PUT_DOWN};
 class State_Action{
 	int label;
 	float Q_value;
@@ -28,7 +27,8 @@ class State_Action{
 		int getLabel(){return label;}
 		float getQValue(){return Q_value;}
 		float getTransitionProbablity(){return transition_probablity;}
-		Block getActionableBlock(){return actionable_block;}
+		Block getActionBlock(){return actionable_block;}
+		Block* getDestinationBlock(){return destination_block;}
 		Action getAction(){return action;}
 
 		// Setters

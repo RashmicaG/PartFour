@@ -1,8 +1,8 @@
 #include "Configuration.h"
-Configuration::Configuration(int numBlocks, vector<Block>* blocks){
+Configuration::Configuration(vector<Block>* blocks){
 	vector<Block>::iterator it;
 	vector<Block> non_actionable_blocks;
-	for (int i=0; i<numBlocks; i++){
+	for (int i=0; i<blocks->size(); i++){
 		actionable_blocks.push_back(blocks->at(i));
 	}
 	

@@ -4,6 +4,7 @@
 #include <vector>
 #include <stdlib.h>
 #include "Block.h"
+#include "Constants.h"
 using namespace std;
 
 class Configuration{
@@ -12,7 +13,7 @@ class Configuration{
 	vector<Block> actionable_blocks;
 	public:
 		//Constructors
-		Configuration(int, vector<Block>*);
+		Configuration(vector<Block>*);
 		//Getters
 		int getNumActionableBlocks(){return actionable_blocks.size();}
 		vector<Block>* getActionableBlockArray(){return &actionable_blocks;}

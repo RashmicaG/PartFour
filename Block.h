@@ -3,12 +3,8 @@
 #include <stddef.h>
 #include <vector>
 #include <stdlib.h>
+#include "Constants.h"
 using namespace std;
-
-enum block_status{STATUS_ON_TABLE, STATUS_IN_ARM, STATUS_ON_BLOCK};
-enum block_shape{PRISM, CUBOID, CUBE};
-enum block_size{SMALL, MEDIUM, LARGE};
-enum block_colour{RED, GREEN, BLUE};
 
 class Block{
 	Block* supporting_block;

@@ -4,6 +4,9 @@
 #include <vector>
 #include <stdlib.h>
 #include "Block.h"
+#include "Configuration.h"
+#include "State_Action.h"
+#include "Constants.h"
 using namespace std;
 
 class State{
