@@ -12,8 +12,8 @@
 #const numRobots = 0.
 #const n = 3.
 #const numTables = 0.
-#const numSurfaces = 4.
-#const numBlocks = 3. 
+#const numSurfaces = 5.
+#const numBlocks = 4. 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -38,7 +38,7 @@
 
 %% Object Properties
 #size = {small, medium, large}.
-#colour = {red, green, blue, purple, white, black}.
+#colour = {red, green, blue, purple, yellow, black}.
 #shape = {cuboid, prism, cube}.
 #surface = [s][0..numSurfaces].
 
@@ -345,6 +345,9 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 %% robot can only hold one object at a time
 -occurs(pick_up(R, O1),I) :-  holds(has_object(R,O2), I), #robot(R), O1!=O2.
 
+%robot cannot pick up an object if there is something on top of it
+-occurs(pick_up(R,O1), I) :-  holds(is_on(O2, S1), I), has_surface(O1, S1).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Fluent and Action Rules
@@ -395,9 +398,13 @@ occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
 
 %% Goal
 %% goal(I) :- holds(is_on(block3, s1), I).
-goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).
 %% goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).
-
+%% goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).
+goal(I) :-
+holds(is_on(block0, s5), I), holds(is_on(block1, s2), I),
+holds(is_on(block2, s5), I),
+holds(is_on(block3, s4), I),
+holds(is_on(block4, s0), I).
 
 
 
@@ -445,33 +452,40 @@ holds(has_location(rob0, a0), 0).
 %% holds(has_state(d1, closed), 0).
 
 has_size(block0, small).
-has_colour(block0, red).
+has_colour(block0, blue).
 has_shape(block0, cuboid).
 has_surface(block0, s0).
 
 has_size(block1, small).
-has_colour(block1, purple).
-has_shape(block1, cuboid).
+has_colour(block1, red).
+has_shape(block1, prism).
 has_surface(block1, s1).
 
 has_size(block2, small).
-has_colour(block2, purple).
-has_shape(block2, prsim).
+has_colour(block2, blue).
+has_shape(block2, cube).
 has_surface(block2, s2).
 
 has_size(block3, small).
-has_colour(block3, purple).
+has_colour(block3, red).
 has_shape(block3, cube).
 has_surface(block3, s3).
 
-has_surface(tab0, s4).
+
+has_size(block4, small).
+has_colour(block4, yellow).
+has_shape(block4, prism).
+has_surface(block4, s4).
+
+has_surface(tab0, s5).
 
 %% Initial location of table and blocks
 holds(has_location(tab0, a0), 0).
-holds(is_on(block0, s4), 0).
-holds(is_on(block1, s4), 0).
-holds(is_on(block2, s4), 0).
-holds(is_on(block3, s4), 0).
+holds(is_on(block0, s5), 0).
+holds(is_on(block1, s2), 0).
+holds(is_on(block2, s5), 0).
+holds(is_on(block3, s5), 0).
+holds(is_on(block4, s5), 0).
 
 %% Testing
 %% occurs(pick_up(rob0,block2),0).
