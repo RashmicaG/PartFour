@@ -72,7 +72,7 @@
 
 %% Fluents
 #inertial_fluent = has_location(#real, #location) + has_object(#animate, #inanimate)
-                   + is_open(#door)  + is_on(#real, #surface) + has_state(#real, #state).
+                   + is_open(#door)  + on(#real, #surface) + has_state(#real, #state).
 
 #defined_fluent = can_move_to(#animate, #location) + is_above(#real, #real).
 
@@ -196,14 +196,14 @@ holds(has_object(R, O),I+1) :- occurs(pick_up(R, O), I), #robot(R).
 
 
 %% If you pick up an object then it is no longer where it was
--holds(is_on(O1, S2), I+1) :- occurs(pick_up(R, O1), I), holds(is_on(O1, S2), I), 
+-holds(on(O1, S2), I+1) :- occurs(pick_up(R, O1), I), holds(on(O1, S2), I), 
                               #robot(R), has_surface(O2, S2).
 
 %% %% robot can put down an object
 -holds(has_object(R, O),I+1) :- occurs(put_down(R,  O, L), I), #robot(R).
 
 %% if a robot puts down an object at a location and there is already an object O2 there, O1 is on O2.
- holds(is_on(O1,S2), I+1) :- occurs(put_down(R,O1, S2),I), holds(has_location(R, L), I), 
+ holds(on(O1,S2), I+1) :- occurs(put_down(R,O1, S2),I), holds(has_location(R, L), I), 
                           holds(has_location(O2, L),I), has_surface(O2, S2), #robot(R).
 
 
@@ -284,12 +284,12 @@ holds(can_move_to(R, A1), I) :- belongs_to(A1, R2), holds(has_location(R, R2), I
 -holds(has_state(R, S1), I) :- holds(has_state(R, S2), I), S1!=S2.
 
 %% If an something O1 is on something O2, then O1 has the location of O2
-holds(has_location(O1, L1), I) :- holds(is_on(O1, S2),I), 
+holds(has_location(O1, L1), I) :- holds(on(O1, S2),I), 
                                 holds(has_location(O2, L1), I),
                                has_surface(O2, S2), O1!=O2.
 
 %% If an something O1 is on something O2, and O2 is on something O3, then O1 is above O3.
-holds(is_above(O1, O3),I) :- holds(is_on(O1, S2),I), holds(is_on(O2, O3), I),
+holds(is_above(O1, O3),I) :- holds(on(O1, S2),I), holds(on(O2, O3), I),
                             has_surface(O2, S2), O1!=O2, O2!=O3, O1!=O3.
 
 %% If O1 is above O2 and O2 is above O3 then O1 is above O3.
@@ -297,7 +297,7 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
                               holds(is_above(O2, O3),I), O1!=O2, O2!=O3, O1!=O3. 
 
 %% an object cannot be on itself
--holds(is_on(O1, S2), I) :- has_surface(O2, S2), O1 = O2.
+-holds(on(O1, S2), I) :- has_surface(O2, S2), O1 = O2.
 
 %% an object cannot be above itself
 -holds(is_above(O1, O2), I) :- O1 = O2.
@@ -346,7 +346,7 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 -occurs(pick_up(R, O1),I) :-  holds(has_object(R,O2), I), #robot(R), O1!=O2.
 
 %robot cannot pick up an object if there is something on top of it
--occurs(pick_up(R,O1), I) :-  holds(is_on(O2, S1), I), has_surface(O1, S1).
+-occurs(pick_up(R,O1), I) :-  holds(on(O2, S1), I), has_surface(O1, S1).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -397,14 +397,14 @@ occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
 
 
 %% Goal
-%% goal(I) :- holds(is_on(block3, s1), I).
-%% goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).
-%% goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).
+%% goal(I) :- holds(on(block3, s1), I).
+%% goal(I) :- holds(on(block3, s1), I), holds(on(block2, s3), I).
+%% goal(I) :- holds(on(block3, s1), I), holds(on(block2, s3), I).
 goal(I) :-
-holds(is_on(block0, s5), I), holds(is_on(block1, s2), I),
-holds(is_on(block2, s5), I),
-holds(is_on(block3, s4), I),
-holds(is_on(block4, s0), I).
+holds(on(block0, s5), I), holds(on(block1, s2), I),
+holds(on(block2, s5), I),
+holds(on(block3, s4), I),
+holds(on(block4, s0), I).
 
 
 
@@ -481,15 +481,15 @@ has_surface(tab0, s5).
 
 %% Initial location of table and blocks
 holds(has_location(tab0, a0), 0).
-holds(is_on(block0, s5), 0).
-holds(is_on(block1, s2), 0).
-holds(is_on(block2, s5), 0).
-holds(is_on(block3, s5), 0).
-holds(is_on(block4, s5), 0).
+holds(on(block0, s5), 0).
+holds(on(block1, s2), 0).
+holds(on(block2, s5), 0).
+holds(on(block3, s5), 0).
+holds(on(block4, s5), 0).
 
 %% Testing
 %% occurs(pick_up(rob0,block2),0).
-%% holds(is_on(block2, s1), 1).
+%% holds(on(block2, s1), 1).
 %% occurs(put_down(rob0,block2, s1),1).
 
 %% occurs(pick_up(rob0,block3),2).
