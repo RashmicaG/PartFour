@@ -220,6 +220,9 @@ impossible put_down(R, O, L) if -has_object(R, O)
 %% robot can only hold one object at a time
 impossible pick_up(R,O1) if has_object(R,O2)
 
+%robot cannot pick up an object if there is something on top of it
+impossible pick_up(R,O1) if is_on(O2, O1).
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
