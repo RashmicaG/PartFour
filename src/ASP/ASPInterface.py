@@ -35,7 +35,7 @@ class KBInterface:
 
         # Stores rules generated in this time-step. Useful so we can look for rule duplicates/conflicts
         # self.ruleCache = RuleCache()
-        # self.consts = {}
+        self.consts = {}
         self.solver_path = solver_path
         self.asp_path = asp_path
         self.current_timestep = 0
@@ -57,6 +57,7 @@ class KBInterface:
 
         # Generate ASP rules for building
         # self.generateFiles()
+
 
         print "Ready to service queries"
         rospy.spin()
@@ -81,28 +82,21 @@ class KBInterface:
         :return: location/name of the outputted answer set
         """
 
-        # add timeStep to constants
-        fpath_constants = os.path.join(os.path.dirname(__file__),'changing_constants.sp')
-        with open( fpath_constants, 'w') as outfile:
-            for key in self.consts:
-                outfile.write("#const " + key + " = " + str(self.consts[key]) + ". \n")
-            outfile.write("#const numSteps = " + str(timeStep) + ".\n")
-
 
         # merge files to create KB
-        self.merge(status)
+        self.merge(status, timeStep)
 
         if pfilter:
             pfilter = '-solveropts "-pfilter=' + pfilter + '"'
 
         fpath_answer = os.path.join(os.path.dirname(__file__), 'asp.answer')  # Where the answer set is written out
         proc = subprocess.Popen(['/bin/bash'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        stdout = proc.communicate('java -jar ' + self.solver_path + ' ' + self.asp_path + ' -A ' + pfilter + ' > ' + fpath_answer)
+        stdout = proc.communicate('java -jar ' + self.solver_path + '/sparc.jar ' + self.asp_path + '/merged.sp -solver dlv -A ' + pfilter + ' > ' + fpath_answer)
 
         return fpath_answer
 
 
-    def merge(self, status):
+    def merge(self, status, timeStep):
         """
         Grabs all the different bits of asp and merges to a single file
         :return:
@@ -130,11 +124,22 @@ class KBInterface:
                     outfile.write(infile.read())
 
 
+        # # add in timestep
+        # fpath_constants = os.path.join(os.path.dirname(__file__),'timestep.sp')
+        # with open( fpath_constants, 'w') as outfile:
+        #     for key in self.consts:
+        #         outfile.write("#const " + key + " = " + str(self.consts[key]) + ". \n")
+        #     outfile.write("#const numSteps = " + str(timeStep) + ".\n")
+
+
+
         filenames = [fpath_constants, fpath_rules, fpath_temp, fpath_initial, fpath_history]
         with open( fpath_output, 'w') as outfile:
             for fname in filenames:
                 with open(fname) as infile:
                     outfile.write(infile.read())
+                if fname is fpath_constants:
+                    outfile.write("#const numSteps = " + str(timeStep) + ".\n")
 
         print 'wooo'
 
