@@ -36,29 +36,19 @@ class KBInterface:
         # Stores rules generated in this time-step. Useful so we can look for rule duplicates/conflicts
         # self.ruleCache = RuleCache()
         # self.consts = {}
-         self.solver_path = solver_path
-         self.asp_path = asp_path
-         self.current_timestep = 0
+        self.solver_path = solver_path
+        self.asp_path = asp_path
+        self.current_timestep = 0
 
-        # self.domain = 'domains/newmarket3/'
-        # self.locations_file = self.domain + 'locations.yaml'
-        # self.map_file = self.domain + 'newmarket3.yaml'
-        # self.door_file = self.domain + 'doors.yaml'
 
         # self.intial_fpath = 'intialLocation.txt' # This should really be domain specific
-        # self.areasList_fpath = self.domain + 'areasList.yaml'
-        # self.doorslist_fpath = self.domain + 'doorsList.yaml'
         # self.defaults_fpath = self.domain + 'personDefaultLocation.yaml'
         # self.fpath_constants_yaml = self.domain + 'constants.yaml'
-        # self.areasRooms_fpath = self.domain + 'areasInRooms.yaml'
-
-        # self.translator = Translator.LogicalTranslator(self.map_file, self.locations_file, self.door_file)
-
-    
+ 
 
         #TODO: add lauch file with parameter solver path and dlv path
 
-        self.yr = yamlReader.YamlReader()
+        # self.yr = yamlReader.YamlReader()
 
         rospy.init_node('AspQueryServer')
         srv_query = rospy.Service('AspQuery', AspQuery, self.queryHandler)
@@ -80,105 +70,10 @@ class KBInterface:
 
         return self.nameToAreaMapping(area_name)
 
-    # def generateFiles(self):
-
-    #     # take info from doors.yaml and convert to a form usable for ASP
-    #     fpath_output = os.path.join(os.path.dirname(__file__), 'autogen/observations.sp')
-    #     fpath_doors_auto = os.path.join(self.yr.path, 'autogen/doorsList.sp')
-
-    #     doorArray = []
-    #     areaArray = []
-    #     roomArray = []
-
-    #     areaYaml = self.yr.YamlIntoDict(self.areasList_fpath)
-    #     with open(fpath_output, 'w') as outfile:
-    #         doorYaml = self.yr.YamlIntoDict(self.door_file)
-    #         # for each door, save the approach locations so we can add observations to KB
-    #         for d in doorYaml:
-    #             temp = Door()
-    #             for a in range(0 , 2):
-    #                 # save door name
-    #                 door = d['name']
-    #                 # save approach location
-    #                 area = d['approach'][a]['from']
-    #                 # add info to array
-    #                 temp.name = door
-    #                 temp.area[a] = area
-    #             doorArray.append(temp)
-
-    #         # add robots initial location in
-    #         fpath_initial_location = os.path.join(os.path.dirname(__file__), self.intial_fpath)
-
-    #         with open(fpath_initial_location, 'r') as initial:
-    #             # current_area = self.get_current_area()
-    #             current_area = 'a8'
-    #             # print 'Generating file with current area as: ' + str(current_area)
-    #             outfile.write('holds(robot_location(' + str(current_area) + '),0).')
-
-    #         # add observations into KB for areas in rooms
-    #         areaRoomYaml = self.yr.YamlIntoDict(self.areasRooms_fpath)
-    #             # find the room that the area is in
-    #         for area in areaRoomYaml:
-    #             if area not in areaArray:
-    #                 areaArray.append(area)
-    #             room = areaRoomYaml[area]
-    #             outfile.write(" is_in_room(" + area + "," + room + "). \n")
-    #             if room not in roomArray:
-    #                 roomArray.append(room)
-
-    #         print 'arealen = ' + str(len(areaArray))
-
-    #         # save door keys to the door names
-    #         for door in doorArray:
-    #             # get keys of areas
-    #             key0 = areaYaml.keys()[areaYaml.values().index(door.area[0])]
-    #             key1 = areaYaml.keys()[areaYaml.values().index(door.area[1])]
-    #             outfile.write( " has_door(" + areaRoomYaml[key0] + "," + "d" + str(doorArray.index((door))+1) + "). " + "\n")
-    #             outfile.write(" has_door(" + areaRoomYaml[key1] + "," + "d" + str(doorArray.index((door))+1) + ")"
-    #                                                                                                 ". " + "\n")
-
-    #         # save people and their default locations
-    #         fpath_temp = os.path.join(os.path.dirname(__file__), 'tmp.txt')
-    #         defaultsYaml = self.yr.YamlIntoDict(self.defaults_fpath)
-    #         personList = "#person = {"
-    #         lastPerson = ""
-    #         for i, person in enumerate(defaultsYaml):
-    #             rule = "holds(has_location(" + person + "," + defaultsYaml[person] + "),I) :+ happened(person_lost(" + person + "), I). \n"
-    #             rule = rule + "holds(has_location(" + person + "," + defaultsYaml[person] + "),0). \n"
-    #             outfile.write(rule)
-    #             personList = personList + person;
-    #             if i < len(defaultsYaml)-1:
-    #                 personList += ", "
-    #         personList = personList + "}. \n"
-    #         with open( fpath_temp, 'w') as outfile_tmp:
-    #             outfile_tmp.write("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n")
-    #             outfile_tmp.write("sorts\n")
-    #             outfile_tmp.write("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n")
-    #             outfile_tmp.write(personList)
-
-
-    #     with open(fpath_doors_auto, 'w') as outfile_door:
-    #         # add doors into doorsList.txt
-    #         for door in doorArray:
-    #             outfile_door.write("d" + str(doorArray.index((door))+1) + " : " + door.name + "\n")
-
-    #     # initialise constants file
-    #     fpath_changing_constants = os.path.join(os.path.dirname(__file__), 'changing_constants.sp')
-    #     with open(fpath_changing_constants, 'w') as outfile:
-    #         self.consts = self.yr.YamlIntoDict(self.fpath_constants_yaml)
-    #         for key in self.consts:
-    #             if key == "numDoors":
-    #                 self.consts[key] = len(doorArray)
-    #             elif key == "numRooms":
-    #                 self.consts[key] = len(roomArray)
-    #             elif key == "numAreas":
-    #                 self.consts[key] = len(areaArray)
-    #             outfile.write("#const " + key + " = " + str(self.consts[key]) + ". \n")
 
 
 
-
-    def solve(self, timeStep, pfilter=''):
+    def solve(self, status, timeStep, pfilter=''):
         """
         Solves the current knowledge base and produces answer set
         :param solverPath: location/name of the asp solver being used
@@ -195,7 +90,7 @@ class KBInterface:
 
 
         # merge files to create KB
-        self.merge()
+        self.merge(status)
 
         if pfilter:
             pfilter = '-solveropts "-pfilter=' + pfilter + '"'
@@ -207,25 +102,41 @@ class KBInterface:
         return fpath_answer
 
 
-    # def merge(self):
-    #     """
-    #     Grabs all the different bits of asp and merges to a single file
-    #     :return:
-    #     """
+    def merge(self, status):
+        """
+        Grabs all the different bits of asp and merges to a single file
+        :return:
+        """
 
-    #     fpath_constants = os.path.join(os.path.dirname(__file__), 'changing_constants.sp')
-    #     fpath_constants = os.path.join(os.path.dirname(__file__), 'changing_constants.sp')
-    #     fpath_static_rules = os.path.join(os.path.dirname(__file__),'basic_knowledge_base.asp')
-    #     fpath_goals = os.path.join(os.path.dirname(__file__),'current_goal.sp')
-    #     fpath_observations = os.path.join(os.path.dirname(__file__),'autogen/observations.sp')
-    #     fpath_temp = os.path.join(os.path.dirname(__file__), 'tmp.txt')
-    #     fpath_output = os.path.join(os.path.dirname(__file__),'merged.sp')
+        fpath_constants = os.path.join(os.path.dirname(__file__), 'constants.sp')
+        fpath_rules = os.path.join(os.path.dirname(__file__),'rules.sp')
+        fpath_initial = os.path.join(os.path.dirname(__file__),'initial.sp')
+        fpath_history = os.path.join(os.path.dirname(__file__),'history.sp')
+        fpath_temp = os.path.join(os.path.dirname(__file__), 'tmp.txt')
+        fpath_output = os.path.join(os.path.dirname(__file__),'merged.sp')
 
-    #     filenames = [fpath_constants, fpath_temp, fpath_static_rules, fpath_goals, fpath_observations]
-    #     with open( fpath_output, 'w') as outfile:
-    #         for fname in filenames:
-    #             with open(fname) as infile:
-    #                 outfile.write(infile.read())
+        if status == 'planning':
+            fpath_mode= os.path.join(os.path.dirname(__file__), 'planning.sp')
+            fpath_goals = os.path.join(os.path.dirname(__file__),'goal.sp')
+            with open( fpath_temp, 'w') as outfile:
+                with open(fpath_mode) as infile:
+                    outfile.write(infile.read())
+                with open(fpath_goals) as infile:
+                    outfile.write(infile.read())
+        else:
+            fpath_mode= os.path.join(os.path.dirname(__file__), 'explanation.sp')
+            with open( fpath_temp, 'w') as outfile:
+                with open(fpath_mode) as infile:
+                    outfile.write(infile.read())
+
+
+        filenames = [fpath_constants, fpath_rules, fpath_temp, fpath_initial, fpath_history]
+        with open( fpath_output, 'w') as outfile:
+            for fname in filenames:
+                with open(fname) as infile:
+                    outfile.write(infile.read())
+
+        print 'wooo'
 
 
 
@@ -302,7 +213,8 @@ class KBInterface:
     def answerHandler(self, goal):
         print goal
         fpath_goal = os.path.join(os.path.dirname(__file__), 'current_goal.sp')
-        time_step = goal.timeStep
+        # time_step = goal.timeStep
+        time_step = 0
         goal = self.generate_goal(goal)
 
         with open(fpath_goal, 'w') as outfile:
@@ -311,7 +223,7 @@ class KBInterface:
         tries=0
         while(tries <10):
              #  Solve and read
-            fpath_answer = self.solve(time_step, pfilter='occurs')
+            fpath_answer = self.solve('planning', time_step, pfilter='occurs')
             self.current_timestep = int(time_step)-1
             with open(fpath_answer, 'r') as infile:
                 answer_string = infile.read()
@@ -323,13 +235,16 @@ class KBInterface:
                     tries += 1
                     time_step += 1
                     print tries
+        # add is stuff for explanations
 
 
 
 
 
     def generate_goal(self, goal):
-        asp.goal = 'goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).'
+        # asp.goal = 'goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).'
+        asp_goal = 'goal(I) :- holds(on(block2, s5), I),holds(on(block3, s4), I), holds(on(block4, s0), I).'
+
         return asp_goal
 
 
@@ -357,7 +272,7 @@ if __name__ == "__main__":
     asp_path = sys.argv[2]
     kb = KBInterface(sparc_path, asp_path)
     
-     kb.solve(pfilter='occurs')
+     # kb.solve(pfilter='occurs')
 
     # kb.addRuleHandler("numDoors")
     # kb.addRuleHandler("holds(door_open(d1,true)).")
@@ -368,7 +283,8 @@ if __name__ == "__main__":
     #
     # kb.writeRuleCache()
     #
-    # kb.merge()
+    # kb.merge('explanation')
+    kb.answerHandler('asdf')
 
     # kb.solve(5, "pfilter= occurs")
 
