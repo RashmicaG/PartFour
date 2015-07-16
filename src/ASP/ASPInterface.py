@@ -214,6 +214,17 @@ class KBInterface:
             return 'no'
         else:
             return 'unknown'
+# TODO merge this with query, ie make query function better
+    def queryBlock(self, surface):
+        pattern = 'has_surface(.*?, ' + surface + ').'
+
+        fpath_initial = os.path.join(os.path.dirname(__file__), 'initial.sp')
+        for line in open(fpath_initial):
+            for match in re.findall(pattern, line):
+                # isolate block
+                block = re.findall("\((.*),", match)[0]
+                return block
+
 
     def answerHandler(self, goal):
         print goal
@@ -255,19 +266,46 @@ class KBInterface:
 
     def parse_answer(self, raw):
         parsed = []  # Use this to save list of SubGoals
-        raw = re.findall("\{(.*?)\}", raw)  # The answer set is inside the squiggly brackets {}
-        raw = raw[0]
+        raw = re.findall("\{(.*?)\}", raw)[0]  # The answer set is inside the squiggly brackets {}
+        # remove spaces between steps
         raw = raw.replace(' ', '')
+        # remove occurs and save steps in a list
         anslist = raw.split('occurs')
+
 
         for step in anslist:
             if step:
-                operation = re.findall("\((.*?)\(", step)  # op
-                time_step = re.findall("\)(.*)\)", step)  # get the timestep
-                time_step = time_step[0].replace(',', '')    # remove the comma from timestep
-                temp = re.search("\((.*)\)", step).group(1)  # remove the outer brackets from statement
-                target = re.findall("\((.*)\),", temp)  # grab stuff within the remain beackets (target)
-                parsed.append(SubGoal(operation=operation[0], target=self.aspToRealMapping(target[0]), time_step=int(time_step)))
+                print 'step: ' + step
+                # get action
+                action = re.findall("\((.*?)\(", step)[0]  
+                print 'action: ' + action
+                print 'timestep: '
+                # get the timestep
+                time_step = re.findall("\)(.*)\)", step) 
+                # remove the comma from timestep 
+                time_step = time_step[0].replace(',', '')   
+                print time_step
+                # remove the outer brackets from statement
+                temp = re.search("\((.*)\)", step).group(1)  
+                # remove brackets
+                print 'temp  ' + temp
+                target = re.findall("\((.*)\),", temp)[0]
+                print 'target: ' + target
+                # put arguments into a list
+                arglist = target.split(',')
+                # we can ignore first element for now, as we are only dealing with one agent
+                block = arglist[1]
+                print 'block: ' + block
+                if action == 'put_down':
+                    surface = arglist[2]
+                    print 'surface: ' + surface
+                    # find out which object the surface belongs to
+                    destBlock = self.queryBlock(surface)
+                    print 'destination block: ' + destBlock
+                else:
+                    destBlock = 'null'
+                    
+                # parsed.append(SubGoal(action = action, actionableBlock = block, destinationBlock = destBlock, time_step=int(time_step)))
 
         return AspAnswerResponse(parsed=parsed)
 
