@@ -1,7 +1,3 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% constants
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#const numSteps = 4.
 #const numRooms = 2.
 #const numDoors = 1.
 #const numAreas = 5.
@@ -14,6 +10,7 @@
 #const numTables = 0.
 #const numSurfaces = 5.
 #const numBlocks = 4. 
+#const numSteps = 4.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  sorts
@@ -369,25 +366,33 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 %robot cannot pick up an object if there is something on top of it
 -occurs(pick_up(R,O1), I) :-  holds(on(O2, S1), I), has_surface(O1, S1).
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Explanation Module
+%% Planning Module
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% %% %% %% Take what actually happened into account:
-%% occurs(A,I) :- hpd(A,I).
+success :- goal(I).
+  :- not success.
 
-%% %% Reality Check 
-%% :- obs(F,true,I), -holds(F,I).
-%% :- obs(F,false,I), holds(F,I).
+                              
+%% Do not allow concurrent actions:
+:- occurs(A1,I),
+   occurs(A2,I),
+   A1 != A2.
 
-%% expl(A,I) :- #exogenous_action(A),
-%%              occurs(A,I),
-%%              not hpd(A,I).
+%% An action occurs at each step before the goal is achieved:
+something_happened(I) :- occurs(A,I).
 
-%% %%   MINIMAL EXPLANATIONS:                            
-%% occurs(A,K) :+ #exogenous_action(A),
-%%               K >= (numSteps-3), K < numSteps.
+%% %% Action Generation
+occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
+
+:- #step(I),
+   not something_happened(I),
+   something_happened(I+1).
+goal(I) :-
+holds(on(block0, s5), I), holds(on(block1, s2), I),
+holds(on(block2, s5), I),
+holds(on(block3, s4), I),
+holds(on(block4, s0), I).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Environment setup
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

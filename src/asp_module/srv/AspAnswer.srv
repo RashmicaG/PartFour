@@ -1,0 +1,7 @@
+string goal
+string entityA
+string entityB
+string entityC
+int16 timeStep
+---
+SubGoal[] parsed

@@ -1,7 +1,3 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% constants
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#const numSteps = 4.
 #const numRooms = 2.
 #const numDoors = 1.
 #const numAreas = 5.

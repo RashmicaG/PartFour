@@ -4,8 +4,8 @@ import rospy
 import os
 import re
 import tf
-from asp_model.srv import *
-from asp_model.msg import *
+from asp_module.srv import *
+from asp_module.msg import *
 from tasks_common import yamlReader
 from tasks_common import Translator
 
@@ -51,8 +51,8 @@ class KBInterface:
         # self.yr = yamlReader.YamlReader()
 
         rospy.init_node('AspQueryServer')
-        srv_query = rospy.Service('AspQuery', AspQuery, self.queryHandler)
-        srv_addrule = rospy.Service('AspAddRule', AspAddRule, self.addRuleHandler)
+        # srv_query = rospy.Service('AspQuery', AspQuery, self.queryHandler)
+        # srv_addrule = rospy.Service('AspAddRule', AspAddRule, self.addRuleHandler)
         srv_answer = rospy.Service('AspAnswer', AspAnswer, self.answerHandler)
 
         # Generate ASP rules for building
@@ -305,7 +305,7 @@ class KBInterface:
                 else:
                     destBlock = 'null'
                     
-                # parsed.append(SubGoal(action = action, actionableBlock = block, destinationBlock = destBlock, time_step=int(time_step)))
+                parsed.append(Action(action = action, actionableBlock = block, destinationBlock = destBlock, time_step=int(time_step)))
 
         return AspAnswerResponse(parsed=parsed)
 
