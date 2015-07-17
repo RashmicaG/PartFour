@@ -39,6 +39,7 @@ class KBInterface:
         self.solver_path = solver_path
         self.asp_path = asp_path
         self.current_timestep = 0
+        self.current_plan = []
 
 
         # self.intial_fpath = 'intialLocation.txt' # This should really be domain specific
@@ -61,16 +62,6 @@ class KBInterface:
 
         print "Ready to service queries"
         rospy.spin()
-
-    def get_current_area(self):
-        listener = tf.TransformListener()
-        listener.waitForTransform("/map", "/base_link", rospy.Time(), rospy.Duration(4.0))
-        trans, rot = listener.lookupTransform('/map', '/base_link', rospy.Time(0))
-
-        area_name = self.translator.cood_to_logical(Translator.SimplePose(x=trans[0], y=trans[1], yaw=0.0))
-
-        return self.nameToAreaMapping(area_name)
-
 
 
 
@@ -246,7 +237,10 @@ class KBInterface:
                 # if blank file (ie inconsistent)
                 print answer_string
                 if os.stat(fpath_answer).st_size >2:
-                    return self.parse_answer(answer_string)
+                    self.parse_answer(answer_string)
+                    print 'OMG'
+                    print self.current_plan[0]
+                    return AspAnswerResponse(parsed=self.current_plan[0])
                 else:
                     tries += 1
                     time_step += 1
@@ -265,49 +259,52 @@ class KBInterface:
 
 
     def parse_answer(self, raw):
-        parsed = []  # Use this to save list of SubGoals
         raw = re.findall("\{(.*?)\}", raw)[0]  # The answer set is inside the squiggly brackets {}
         # remove spaces between steps
         raw = raw.replace(' ', '')
         # remove occurs and save steps in a list
         anslist = raw.split('occurs')
-
+        parsed = [0]*(len(anslist)-1)  # Use this to save list of SubGoals
+        print parsed
 
         for step in anslist:
             if step:
-                print 'step: ' + step
+                # print 'step: ' + step
                 # get action
                 action = re.findall("\((.*?)\(", step)[0]  
-                print 'action: ' + action
-                print 'timestep: '
+                # print 'action: ' + action
+                # print 'timestep: '
                 # get the timestep
                 time_step = re.findall("\)(.*)\)", step) 
                 # remove the comma from timestep 
                 time_step = time_step[0].replace(',', '')   
-                print time_step
+                # print time_step
                 # remove the outer brackets from statement
                 temp = re.search("\((.*)\)", step).group(1)  
                 # remove brackets
-                print 'temp  ' + temp
+                # print 'temp  ' + temp
                 target = re.findall("\((.*)\),", temp)[0]
-                print 'target: ' + target
+                # print 'target: ' + target
                 # put arguments into a list
                 arglist = target.split(',')
                 # we can ignore first element for now, as we are only dealing with one agent
                 block = arglist[1]
-                print 'block: ' + block
+                # print 'block: ' + block
                 if action == 'put_down':
                     surface = arglist[2]
-                    print 'surface: ' + surface
+                    # print 'surface: ' + surface
                     # find out which object the surface belongs to
                     destBlock = self.queryBlock(surface)
-                    print 'destination block: ' + destBlock
+                    # print 'destination block: ' + destBlock
                 else:
                     destBlock = 'null'
-                    
-                parsed.append(Action(action = action, actionableBlock = block, destinationBlock = destBlock, time_step=int(time_step)))
+                parsed[int(time_step)] = (Action(action = action, actionableBlock = block, destinationBlock = destBlock, time_step=int(time_step)))
 
-        return AspAnswerResponse(parsed=parsed)
+        self.current_plan = parsed
+
+                # parsed.append(Action(action = action, actionableBlock = block, destinationBlock = destBlock, time_step=int(time_step)))
+
+        return 
 
 if __name__ == "__main__":
 
@@ -328,6 +325,7 @@ if __name__ == "__main__":
     #
     # kb.merge('explanation')
     kb.answerHandler('asdf')
+    print kb.current_plan
 
     # kb.solve(5, "pfilter= occurs")
 

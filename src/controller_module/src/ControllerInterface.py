@@ -12,8 +12,8 @@ class Robot:
 
             print ans_response
 
-            self.goalActive = True
-            return ans_response.parsed
+            # self.goalActive = True
+            # return ans_response
 
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
