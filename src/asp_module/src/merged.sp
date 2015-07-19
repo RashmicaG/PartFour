@@ -367,33 +367,6 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 -occurs(pick_up(R,O1), I) :-  holds(on(O2, S1), I), has_surface(O1, S1).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Planning Module
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-success :- goal(I).
-  :- not success.
-
-                              
-%% Do not allow concurrent actions:
-:- occurs(A1,I),
-   occurs(A2,I),
-   A1 != A2.
-
-%% An action occurs at each step before the goal is achieved:
-something_happened(I) :- occurs(A,I).
-
-%% %% Action Generation
-occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
-
-:- #step(I),
-   not something_happened(I),
-   something_happened(I+1).
-goal(I) :-
-holds(on(block0, s5), I), holds(on(block1, s2), I),
-holds(on(block2, s5), I),
-holds(on(block3, s4), I),
-holds(on(block4, s0), I).
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Environment setup
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  belongs_to(a0, r1).
@@ -450,4 +423,26 @@ holds(on(block0, s5), 0).
 holds(on(block1, s2), 0).
 holds(on(block2, s5), 0).
 holds(on(block3, s5), 0).
-holds(on(block4, s5), 0).
+holds(on(block4, s5), 0).%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Planning Module
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+success :- goal(I).
+  :- not success.
+
+                              
+%% Do not allow concurrent actions:
+:- occurs(A1,I),
+   occurs(A2,I),
+   A1 != A2.
+
+%% An action occurs at each step before the goal is achieved:
+something_happened(I) :- occurs(A,I).
+
+%% %% Action Generation
+occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
+
+:- #step(I),
+   not something_happened(I),
+   something_happened(I+1).
+goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).

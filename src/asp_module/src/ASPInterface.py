@@ -6,8 +6,8 @@ import re
 import tf
 from asp_module.srv import *
 from asp_module.msg import *
-from tasks_common import yamlReader
-from tasks_common import Translator
+from threading import Thread
+from std_msgs.msg import Int16
 
 
 # TODO: move files to common
@@ -28,54 +28,39 @@ class Door:
         return str(self.name) + ' connected to ' + str(self.area[0]) + ', ' + str(self.area[1])
 
 
-class KBInterface:
+class ASPInterface:
     """Used to interact withe the ASP Knowledge Base"""
 
     def __init__(self, solver_path, asp_path):
 
-        # Stores rules generated in this time-step. Useful so we can look for rule duplicates/conflicts
+        # Stores rules generated in this timestep. Useful so we can look for rule duplicates/conflicts
         # self.ruleCache = RuleCache()
-        self.consts = {}
         self.solver_path = solver_path
         self.asp_path = asp_path
         self.current_timestep = 0
         self.current_plan = []
-
-
-        # self.intial_fpath = 'intialLocation.txt' # This should really be domain specific
-        # self.defaults_fpath = self.domain + 'personDefaultLocation.yaml'
-        # self.fpath_constants_yaml = self.domain + 'constants.yaml'
- 
+        self.goal = 'null'
+        self.iterator = 0
+        self.timestep = 0
+        self.observations = []
 
         #TODO: add lauch file with parameter solver path and dlv path
 
-        # self.yr = yamlReader.YamlReader()
-
-        rospy.init_node('AspQueryServer')
+        rospy.init_node('AspServer')
         # srv_query = rospy.Service('AspQuery', AspQuery, self.queryHandler)
-        # srv_addrule = rospy.Service('AspAddRule', AspAddRule, self.addRuleHandler)
+        srv_addObs = rospy.Service('AspAddObservation', AspAddObservation, self.addObservationHandler)
         srv_answer = rospy.Service('AspAnswer', AspAnswer, self.answerHandler)
 
-        # Generate ASP rules for building
-        # self.generateFiles()
 
-
-        print "Ready to service queries"
-        rospy.spin()
-
-
-
-    def solve(self, status, timeStep, pfilter=''):
+    def solve(self, mode, timeStep, pfilter='', goal=''):
         """
         Solves the current knowledge base and produces answer set
         :param solverPath: location/name of the asp solver being used
         :param aspPath: location/name of merged asp file
         :return: location/name of the outputted answer set
         """
-
-
-        # merge files to create KB
-        self.merge(status, timeStep)
+        # merge files to create kb
+        self.merge(mode, timeStep)
 
         if pfilter:
             pfilter = '-solveropts "-pfilter=' + pfilter + '"'
@@ -87,53 +72,41 @@ class KBInterface:
         return fpath_answer
 
 
-    def merge(self, status, timeStep):
+    def merge(self, mode, timeStep):
         """
         Grabs all the different bits of asp and merges to a single file
         :return:
         """
-
         fpath_constants = os.path.join(os.path.dirname(__file__), 'constants.sp')
         fpath_rules = os.path.join(os.path.dirname(__file__),'rules.sp')
         fpath_initial = os.path.join(os.path.dirname(__file__),'initial.sp')
         fpath_history = os.path.join(os.path.dirname(__file__),'history.sp')
-        fpath_temp = os.path.join(os.path.dirname(__file__), 'tmp.txt')
         fpath_output = os.path.join(os.path.dirname(__file__),'merged.sp')
+        fpath_planner= os.path.join(os.path.dirname(__file__), 'planning.sp')
+        fpath_explainer= os.path.join(os.path.dirname(__file__), 'explanation.sp')
+        fpath_goal = os.path.join(os.path.dirname(__file__),'goal.sp')
 
-        if status == 'planning':
-            fpath_mode= os.path.join(os.path.dirname(__file__), 'planning.sp')
-            fpath_goals = os.path.join(os.path.dirname(__file__),'goal.sp')
-            with open( fpath_temp, 'w') as outfile:
-                with open(fpath_mode) as infile:
-                    outfile.write(infile.read())
-                with open(fpath_goals) as infile:
-                    outfile.write(infile.read())
-        else:
-            fpath_mode= os.path.join(os.path.dirname(__file__), 'explanation.sp')
-            with open( fpath_temp, 'w') as outfile:
-                with open(fpath_mode) as infile:
-                    outfile.write(infile.read())
+        filenames = [fpath_constants, fpath_rules, fpath_initial, fpath_history]
+       
+        if mode == 'planning':
+            filenames.append(fpath_planner)
+            # if goal != '':
+            #     filenames.append(fpath_goal)
+        elif mode == 'explaining':
+            filenames.append(fpath_explainer)
 
 
-        # # add in timestep
-        # fpath_constants = os.path.join(os.path.dirname(__file__),'timestep.sp')
-        # with open( fpath_constants, 'w') as outfile:
-        #     for key in self.consts:
-        #         outfile.write("#const " + key + " = " + str(self.consts[key]) + ". \n")
-        #     outfile.write("#const numSteps = " + str(timeStep) + ".\n")
-
-
-
-        filenames = [fpath_constants, fpath_rules, fpath_temp, fpath_initial, fpath_history]
         with open( fpath_output, 'w') as outfile:
             for fname in filenames:
                 with open(fname) as infile:
                     outfile.write(infile.read())
                 if fname is fpath_constants:
                     outfile.write("#const numSteps = " + str(timeStep) + ".\n")
+                elif fname is fpath_planner:
+                    outfile.write(self.goal)
 
-        print 'wooo'
-
+    def addObservationHandler(self, observation):
+        pass
 
 
     def addRuleHandler(self, rule):
@@ -217,45 +190,43 @@ class KBInterface:
                 return block
 
 
-    def answerHandler(self, goal):
-        print goal
-        fpath_goal = os.path.join(os.path.dirname(__file__), 'current_goal.sp')
-        # time_step = goal.timeStep
-        time_step = 0
-        goal = self.generate_goal(goal)
+    def answerHandler(self, goal=''):
+        if goal.goal != self.goal:
+            print 'new goal!'
+            self.goal = goal.goal
+            # print self.goal
+            print
+            self.iterator = 0
+            timestep = self.timestep
+            max_timestep = 10
 
-        with open(fpath_goal, 'w') as outfile:
-            outfile.writelines(goal)
+            while(timestep <max_timestep):
+                print timestep
+                 #  Solve and read
+                fpath_answer = self.solve('planning', timestep, pfilter='occurs')
+                with open(fpath_answer, 'r') as infile:
+                    answer_string = infile.read()
+                    # if blank file (ie inconsistent)
+                    print answer_string
+                    if os.stat(fpath_answer).st_size >2:
+                        self.parse_answer(answer_string)
+                        return AspAnswerResponse(parsed=self.current_plan[self.iterator])
+                    else:
+                        timestep += 1
+        else:
+            print 'same goal!'
+            self.iterator += 1
 
-        tries=0
-        while(tries <10):
-             #  Solve and read
-            fpath_answer = self.solve('planning', time_step, pfilter='occurs')
-            self.current_timestep = int(time_step)-1
-            with open(fpath_answer, 'r') as infile:
-                answer_string = infile.read()
-                # if blank file (ie inconsistent)
-                print answer_string
-                if os.stat(fpath_answer).st_size >2:
-                    self.parse_answer(answer_string)
-                    print 'OMG'
-                    print self.current_plan[0]
-                    return AspAnswerResponse(parsed=self.current_plan[0])
-                else:
-                    tries += 1
-                    time_step += 1
-                    print tries
+            return AspAnswerResponse(parsed=self.current_plan[self.iterator])
+            print
         # add is stuff for explanations
+        # %% Do not allow concurrent actions:
+# :- occurs(A1,I),
+   # occurs(A2,I),
+   # A1 != A2, #agent_action(A1), #agent_action(A2).
 
 
 
-
-
-    def generate_goal(self, goal):
-        # asp.goal = 'goal(I) :- holds(is_on(block3, s1), I), holds(is_on(block2, s3), I).'
-        asp_goal = 'goal(I) :- holds(on(block2, s5), I),holds(on(block3, s4), I), holds(on(block4, s0), I).'
-
-        return asp_goal
 
 
     def parse_answer(self, raw):
@@ -269,63 +240,84 @@ class KBInterface:
 
         for step in anslist:
             if step:
-                # print 'step: ' + step
                 # get action
                 action = re.findall("\((.*?)\(", step)[0]  
-                # print 'action: ' + action
-                # print 'timestep: '
                 # get the timestep
-                time_step = re.findall("\)(.*)\)", step) 
+                timestep = re.findall("\)(.*)\)", step) 
                 # remove the comma from timestep 
-                time_step = time_step[0].replace(',', '')   
-                # print time_step
+                timestep = timestep[0].replace(',', '')   
                 # remove the outer brackets from statement
                 temp = re.search("\((.*)\)", step).group(1)  
                 # remove brackets
-                # print 'temp  ' + temp
                 target = re.findall("\((.*)\),", temp)[0]
-                # print 'target: ' + target
                 # put arguments into a list
                 arglist = target.split(',')
                 # we can ignore first element for now, as we are only dealing with one agent
                 block = arglist[1]
-                # print 'block: ' + block
                 if action == 'put_down':
                     surface = arglist[2]
-                    # print 'surface: ' + surface
                     # find out which object the surface belongs to
                     destBlock = self.queryBlock(surface)
-                    # print 'destination block: ' + destBlock
                 else:
                     destBlock = 'null'
-                parsed[int(time_step)] = (Action(action = action, actionableBlock = block, destinationBlock = destBlock, time_step=int(time_step)))
+                parsed[int(timestep)] = (Action(action = action, actionableBlock = block, destinationBlock = destBlock, timestep=int(timestep)))
 
         self.current_plan = parsed
-
-                # parsed.append(Action(action = action, actionableBlock = block, destinationBlock = destBlock, time_step=int(time_step)))
-
         return 
+
+
+
+    def newTimestepCallback(self, timestep):
+        """New timestep"""
+        print 'A new timestep has just come in!'
+        self.timestep = timestep.data
+        print 'timestep is now ' 
+        print self.timestep
+        return
+
+    def newObservationCallback(self, observation):
+        """ Add new observation to observation queue """
+        self.observations.append(observation)
+        self.checkNewObservations()
+        
+
+    def newGoalCallback(self, goal):
+        pass # don't think we will need this
+
+    def checkNewObservations(self):
+        if len(self.observations) > 0:
+            unparsedObs = self.observations.pop()
+            parsedObs='holds('
+
+            if not unparsedObs.negation:
+                parsedObs= '-' + parsedObs
+
+            parsedObs += unparsedObs.fluent + '(' + unparsedObs.argument1 + ',' + unparsedObs.argument2 + '),' + str(unparsedObs.timestep) + ').'
+            print parsedObs
+
+        else:
+            return
+
 
 if __name__ == "__main__":
 
     sparc_path = sys.argv[1]
     asp_path = sys.argv[2]
-    kb = KBInterface(sparc_path, asp_path)
-    
-     # kb.solve(pfilter='occurs')
+    kb = ASPInterface(sparc_path, asp_path)
 
-    # kb.addRuleHandler("numDoors")
-    # kb.addRuleHandler("holds(door_open(d1,true)).")
-    # kb.addRuleHandler("goal :- holds(blah, I).")
-    # kb.addRuleHandler("numRooms")
-    # kb.addRuleHandler("holds(door_open(d3,true)).")
-    # kb.addRuleHandler("goal :- holds(blahblah, I).")
-    #
-    # kb.writeRuleCache()
-    #
+    rospy.Subscriber('/controller/timestep', Int16, kb.newTimestepCallback)
+    # rospy.Subscriber('/controller/goal', Goal, kb.newGoalCallback)
+    rospy.Subscriber('/controller/observations', Observation, kb.newObservationCallback)
+
+    print "Ready to service queries"
+
+    kb.checkNewObservations()
+    rospy.spin()
+    
+   
     # kb.merge('explanation')
-    kb.answerHandler('asdf')
-    print kb.current_plan
+    # kb.answerHandler('asdf')
+    # print kb.current_plan
 
     # kb.solve(5, "pfilter= occurs")
 
