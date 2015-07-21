@@ -77,190 +77,195 @@ class ASPInterface:
         Grabs all the different bits of asp and merges to a single file
         :return:
         """
-        fpath_constants = os.path.join(os.path.dirname(__file__), 'constants.sp')
-        fpath_rules = os.path.join(os.path.dirname(__file__),'rules.sp')
-        fpath_initial = os.path.join(os.path.dirname(__file__),'initial.sp')
-        fpath_history = os.path.join(os.path.dirname(__file__),'history.sp')
-        fpath_output = os.path.join(os.path.dirname(__file__),'merged.sp')
-        fpath_planner= os.path.join(os.path.dirname(__file__), 'planning.sp')
-        fpath_explainer= os.path.join(os.path.dirname(__file__), 'explanation.sp')
-        fpath_goal = os.path.join(os.path.dirname(__file__),'goal.sp')
+        try:
 
-        filenames = [fpath_constants, fpath_rules, fpath_initial, fpath_history]
-       
-        if mode == 'planning':
-            filenames.append(fpath_planner)
-            # if goal != '':
-            #     filenames.append(fpath_goal)
-        elif mode == 'explaining':
-            filenames.append(fpath_explainer)
+            fpath_constants = os.path.join(os.path.dirname(__file__), 'constants.sp')
+            fpath_rules = os.path.join(os.path.dirname(__file__),'rules.sp')
+            fpath_initial = os.path.join(os.path.dirname(__file__),'initial.sp')
+            fpath_history = os.path.join(os.path.dirname(__file__),'history.sp')
+            fpath_output = os.path.join(os.path.dirname(__file__),'merged.sp')
+            fpath_planner= os.path.join(os.path.dirname(__file__), 'planning.sp')
+            fpath_explainer= os.path.join(os.path.dirname(__file__), 'explanation.sp')
+            fpath_goal = os.path.join(os.path.dirname(__file__),'goal.sp')
+
+            filenames = [fpath_constants, fpath_rules, fpath_initial, fpath_history]
+           
+            if mode == 'planning':
+                filenames.append(fpath_planner)
+                # if goal != '':
+                #     filenames.append(fpath_goal)
+            elif mode == 'explaining':
+                filenames.append(fpath_explainer)
 
 
-        with open( fpath_output, 'w') as outfile:
-            for fname in filenames:
-                with open(fname) as infile:
-                    outfile.write(infile.read())
-                if fname is fpath_constants:
-                    outfile.write("#const numSteps = " + str(timeStep) + ".\n")
-                elif fname is fpath_planner:
-                    outfile.write(self.goal)
+            with open( fpath_output, 'w') as outfile:
+                for fname in filenames:
+                    with open(fname) as infile:
+                        outfile.write(infile.read())
+                    if fname is fpath_constants:
+                        outfile.write("#const numSteps = " + str(timeStep) + ".\n")
+                    elif fname is fpath_planner:
+                        outfile.write(self.goal)
+        except:
+            print "Merging ASP files failed"
 
     def addObservationHandler(self, observation):
         pass
 
 
-    def addRuleHandler(self, rule):
-        """
-        Adds rules to the appropiate rule cache so that we can write them out when needed.
-        Rules are kept in cache until being written out so that we can verify if new rules being added are ok.
-        :param rule: The new rule that we are adding
-        :return: boolean indicating success/failure
-        """
-        # TODO: Check for conflicting rules such as has_location(X, L), -has_location(X, L)
+    # def addRuleHandler(self, rule):
+    #     """
+    #     Adds rules to the appropiate rule cache so that we can write them out when needed.
+    #     Rules are kept in cache until being written out so that we can verify if new rules being added are ok.
+    #     :param rule: The new rule that we are adding
+    #     :return: boolean indicating success/failure
+    #     """
+    #     # TODO: Check for conflicting rules such as has_location(X, L), -has_location(X, L)
 
-        if "goal(" in rule:
-            #append to goal cache
-            if rule not in self.ruleCache.goals:
-                self.ruleCache.goals.append(rule)
-                print self.ruleCache.goals
-                print "goals"
-                return True
-            else:
-                return False
+    #     if "goal(" in rule:
+    #         #append to goal cache
+    #         if rule not in self.ruleCache.goals:
+    #             self.ruleCache.goals.append(rule)
+    #             return True
+    #         else:
+    #             return False
 
-        # DO NOT MOVE THIS ONE ABOVE GOALS UNLESS YOU ARE GOING TO MAKE IT SMARTER
-        elif "holds(" in rule:  #assuming all observations we need to add are temporal
-            #append to observation cache
-            if rule not in self.ruleCache.observations:
-                self.ruleCache.observations.append(rule)
-                print self.ruleCache.observations
-                print "observation"
-                return True
-            else:
-                return False
+    #     # DO NOT MOVE THIS ONE ABOVE GOALS UNLESS YOU ARE GOING TO MAKE IT SMARTER
+    #     elif "holds(" in rule:  #assuming all observations we need to add are temporal
+    #         #append to observation cache
+    #         if rule not in self.ruleCache.observations:
+    #             self.ruleCache.observations.append(rule)
+    #             return True
+    #         else:
+    #             return False
 
 
 
-    def writeRuleCache(self):
+    # def writeRuleCache(self):
+    #     # rewrite goals file
+    #     fpath_goals = os.path.join(os.path.dirname(__file__),'current_goal.sp')
+    #     with open( fpath_goals, 'w') as outfile:
+    #         for goal in self.ruleCache.goals:
+    #             outfile.write(goal+ "\n")
 
-
-        # rewrite goals file
-        fpath_goals = os.path.join(os.path.dirname(__file__),'current_goal.sp')
-        with open( fpath_goals, 'w') as outfile:
-            for goal in self.ruleCache.goals:
-                outfile.write(goal+ "\n")
-
-        # append observations files
-        fpath_observations = os.path.join(os.path.dirname(__file__),'autogen/observations.sp')
-        with open( fpath_observations, 'a') as outfile:
-            for observation in self.ruleCache.observations:
-                outfile.write(observation+ "\n")
+    #     # append observations files
+    #     fpath_observations = os.path.join(os.path.dirname(__file__),'autogen/observations.sp')
+    #     with open( fpath_observations, 'a') as outfile:
+    #         for observation in self.ruleCache.observations:
+    #             outfile.write(observation+ "\n")
 
 
 
-    def queryHandler(self, req):
-        query = req.query
-        # fpath_answer = self.solve()
+    # def queryHandler(self, req):
+    #     query = req.query
+    #     # fpath_answer = self.solve()
 
-        f = open(fpath_answer, 'r')
-        answerset = f.read()
-        trueQuery = ' ' + query
-        falseQuery = '-' + query
+    #     f = open(fpath_answer, 'r')
+    #     answerset = f.read()
+    #     trueQuery = ' ' + query
+    #     falseQuery = '-' + query
 
-        istrue = trueQuery in answerset
+    #     istrue = trueQuery in answerset
 
-        if not istrue:
-            isfalse = falseQuery in answerset
+    #     if not istrue:
+    #         isfalse = falseQuery in answerset
 
-        if istrue:
-            return 'yes'
-        elif isfalse:
-            return 'no'
-        else:
-            return 'unknown'
+    #     if istrue:
+    #         return 'yes'
+    #     elif isfalse:
+    #         return 'no'
+    #     else:
+    #         return 'unknown'
 # TODO merge this with query, ie make query function better
-    def queryBlock(self, surface):
-        pattern = 'has_surface(.*?, ' + surface + ').'
-
-        fpath_initial = os.path.join(os.path.dirname(__file__), 'initial.sp')
-        for line in open(fpath_initial):
-            for match in re.findall(pattern, line):
-                # isolate block
-                block = re.findall("\((.*),", match)[0]
-                return block
+    def querySurface(self, surface):
+        """ This function takes a surface and returns 
+        the object that this surface belongs to"""
+        try:
+            pattern = 'has_surface(.*?, ' + surface + ').'
+            fpath_initial = os.path.join(os.path.dirname(__file__), 'initial.sp')
+            for line in open(fpath_initial):
+                for match in re.findall(pattern, line):
+                    # isolate block
+                    block = re.findall("\((.*),", match)[0]
+                    return block
+        except:
+            print "Error in querySurface()"
 
 
     def answerHandler(self, goal=''):
+        """ Function called when a node calls AspAnswer service.
+        Attempts to generate a plan for the goal that is given."""
         if goal.goal != self.goal:
-            print 'new goal!'
-            self.goal = goal.goal
-            # print self.goal
-            print
-            self.iterator = 0
-            timestep = self.timestep
-            max_timestep = 10
+            try:
+                print 'new goal!'
+                self.goal = goal.goal
+                self.iterator = 0
+                timestep = self.timestep
+                max_timestep = 10
 
-            while(timestep <max_timestep):
-                print timestep
-                 #  Solve and read
-                fpath_answer = self.solve('planning', timestep, pfilter='occurs')
-                with open(fpath_answer, 'r') as infile:
-                    answer_string = infile.read()
-                    # if blank file (ie inconsistent)
-                    print answer_string
-                    if os.stat(fpath_answer).st_size >2:
-                        self.parse_answer(answer_string)
-                        return AspAnswerResponse(parsed=self.current_plan[self.iterator])
-                    else:
+                while(timestep <max_timestep):
+                     #  Solve and read
+                    fpath_answer = self.solve('planning', timestep, pfilter='occurs')
+                    with open(fpath_answer, 'r') as infile:
+                        raw = infile.read()
+                        self.parse_answer(raw)
+                        print self.current_plan
+                    if not self.current_plan:
                         timestep += 1
+                    else:
+                       return AspAnswerResponse(parsed=self.current_plan[self.iterator])
+             except:
+                print "An error occured in answerHandler"
         else:
-            print 'same goal!'
-            self.iterator += 1
+            try:
+                print 'same goal!'
+                self.iterator += 1
+                return AspAnswerResponse(parsed=self.current_plan[self.iterator])
+            except IndexError:
+                return AspAnswerResponse(parsed= Action(action = 'null', actionableBlock = 'null', destinationBlock = 'null', timestep=0, goalAchieved = True))
+            
 
-            return AspAnswerResponse(parsed=self.current_plan[self.iterator])
-            print
-        # add is stuff for explanations
-        # %% Do not allow concurrent actions:
-# :- occurs(A1,I),
-   # occurs(A2,I),
-   # A1 != A2, #agent_action(A1), #agent_action(A2).
 
 
 
 
 
     def parse_answer(self, raw):
-        raw = re.findall("\{(.*?)\}", raw)[0]  # The answer set is inside the squiggly brackets {}
-        # remove spaces between steps
-        raw = raw.replace(' ', '')
-        # remove occurs and save steps in a list
-        anslist = raw.split('occurs')
-        parsed = [0]*(len(anslist)-1)  # Use this to save list of SubGoals
-        print parsed
+        """ This parses an answer set, looking for actions with blocks"""
+        parsed =[] # Use this to save list of SubGoals
+        if len(raw) <2:
+            pass
+        else:
+            raw = re.findall("\{(.*?)\}", raw)[0]  # The answer set is inside the squiggly brackets {}
+            # remove spaces between steps
+            raw = raw.replace(' ', '')
+            # remove occurs and save steps in a list
+            anslist = raw.split('occurs')
 
-        for step in anslist:
-            if step:
-                # get action
-                action = re.findall("\((.*?)\(", step)[0]  
-                # get the timestep
-                timestep = re.findall("\)(.*)\)", step) 
-                # remove the comma from timestep 
-                timestep = timestep[0].replace(',', '')   
-                # remove the outer brackets from statement
-                temp = re.search("\((.*)\)", step).group(1)  
-                # remove brackets
-                target = re.findall("\((.*)\),", temp)[0]
-                # put arguments into a list
-                arglist = target.split(',')
-                # we can ignore first element for now, as we are only dealing with one agent
-                block = arglist[1]
-                if action == 'put_down':
-                    surface = arglist[2]
-                    # find out which object the surface belongs to
-                    destBlock = self.queryBlock(surface)
-                else:
-                    destBlock = 'null'
-                parsed[int(timestep)] = (Action(action = action, actionableBlock = block, destinationBlock = destBlock, timestep=int(timestep)))
+            for step in anslist:
+                if step:
+                    # get action
+                    action = re.findall("\((.*?)\(", step)[0]  
+                    # get the timestep
+                    timestep = re.findall("\)(.*)\)", step) 
+                    # remove the comma from timestep 
+                    timestep = timestep[0].replace(',', '')   
+                    # remove the outer brackets from statement
+                    temp = re.search("\((.*)\)", step).group(1)  
+                    # remove brackets
+                    target = re.findall("\((.*)\),", temp)[0]
+                    # put arguments into a list
+                    arglist = target.split(',')
+                    # we can ignore first element for now, as we are only dealing with one agent
+                    block = arglist[1]
+                    if action == 'put_down':
+                        surface = arglist[2]
+                        # find out which object the surface belongs to
+                        destBlock = self.querySurface(surface)
+                    else:
+                        destBlock = 'null'
+
+                    parsed.insert(int(timestep),(Action(action = action, actionableBlock = block, destinationBlock = destBlock, timestep=int(timestep), goalAchieved = False)))
 
         self.current_plan = parsed
         return 

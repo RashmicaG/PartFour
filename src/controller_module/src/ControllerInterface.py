@@ -27,14 +27,14 @@ class Robot:
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
 
-    def timestepPublisher(self, pub):
-        pub.publish(self.timestep)
+    def publisher(self, pub, msg):
+        try:
+            pub.publish(msg)
+        except:
+            print "Publishing failed call failed:"
+
         return
             
-
-    def observationPublisher(self, pub, observation):
-        pub.publish(observation)
-        return
 
     def executeAction(self, action):
         """ This will send action to robot module and return feedback"""
@@ -53,13 +53,15 @@ if __name__ == '__main__':
     print 'Publishers running...'
 
     # holds(on(block1, s2), 0).
+   
+    r.get_answer_set('goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).')
+    r.get_answer_set('goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).')
+    r.publisher( timestep_publisher, r.timestep)
+    r.get_answer_set('goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).')
+    
     obs = (Observation(negation=False, fluent='on', argument1='block1', argument2='s2', timestep=r.timestep))
     print obs
-    r.get_answer_set('goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).')
-    r.get_answer_set('goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).')
-    r.timestepPublisher( timestep_publisher)
-    r.get_answer_set('goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).')
-    r.observationPublisher(observation_publisher, obs)
+    r.publisher(observation_publisher, obs)
 
     # while not rospy.is_shutdown():
         # rate.sleep()
