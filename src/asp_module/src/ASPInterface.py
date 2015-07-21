@@ -113,70 +113,6 @@ class ASPInterface:
         pass
 
 
-    # def addRuleHandler(self, rule):
-    #     """
-    #     Adds rules to the appropiate rule cache so that we can write them out when needed.
-    #     Rules are kept in cache until being written out so that we can verify if new rules being added are ok.
-    #     :param rule: The new rule that we are adding
-    #     :return: boolean indicating success/failure
-    #     """
-    #     # TODO: Check for conflicting rules such as has_location(X, L), -has_location(X, L)
-
-    #     if "goal(" in rule:
-    #         #append to goal cache
-    #         if rule not in self.ruleCache.goals:
-    #             self.ruleCache.goals.append(rule)
-    #             return True
-    #         else:
-    #             return False
-
-    #     # DO NOT MOVE THIS ONE ABOVE GOALS UNLESS YOU ARE GOING TO MAKE IT SMARTER
-    #     elif "holds(" in rule:  #assuming all observations we need to add are temporal
-    #         #append to observation cache
-    #         if rule not in self.ruleCache.observations:
-    #             self.ruleCache.observations.append(rule)
-    #             return True
-    #         else:
-    #             return False
-
-
-
-    # def writeRuleCache(self):
-    #     # rewrite goals file
-    #     fpath_goals = os.path.join(os.path.dirname(__file__),'current_goal.sp')
-    #     with open( fpath_goals, 'w') as outfile:
-    #         for goal in self.ruleCache.goals:
-    #             outfile.write(goal+ "\n")
-
-    #     # append observations files
-    #     fpath_observations = os.path.join(os.path.dirname(__file__),'autogen/observations.sp')
-    #     with open( fpath_observations, 'a') as outfile:
-    #         for observation in self.ruleCache.observations:
-    #             outfile.write(observation+ "\n")
-
-
-
-    # def queryHandler(self, req):
-    #     query = req.query
-    #     # fpath_answer = self.solve()
-
-    #     f = open(fpath_answer, 'r')
-    #     answerset = f.read()
-    #     trueQuery = ' ' + query
-    #     falseQuery = '-' + query
-
-    #     istrue = trueQuery in answerset
-
-    #     if not istrue:
-    #         isfalse = falseQuery in answerset
-
-    #     if istrue:
-    #         return 'yes'
-    #     elif isfalse:
-    #         return 'no'
-    #     else:
-    #         return 'unknown'
-# TODO merge this with query, ie make query function better
     def querySurface(self, surface):
         """ This function takes a surface and returns 
         the object that this surface belongs to"""
@@ -224,10 +160,6 @@ class ASPInterface:
             except IndexError:
                 return AspAnswerResponse(parsed= Action(action = 'null', actionableBlock = 'null', destinationBlock = 'null', timestep=0, goalAchieved = True))
             
-
-
-
-
 
 
     def parse_answer(self, raw):
@@ -290,6 +222,8 @@ class ASPInterface:
         pass # don't think we will need this
 
     def checkNewObservations(self):
+        """ Checks if new observations are valid
+        observation type and then appends them."""
         if len(self.observations) > 0:
             unparsedObs = self.observations.pop()
             parsedObs='holds('
