@@ -1,9 +1,15 @@
 <launch>
   <include file="$(find openni_launch)/launch/openni.launch">
   	<arg name="depth_registration" value="true" />
-  </include>
+  </include> 
+
+  
+    <!--<include file="$(find turtlebot_bringup)/launch/3dsensor.launch" /> -->
+
 
   <include file="$(find turtlebot_arm_block_manipulation)/launch/block_manipulation.launch" />
+
+<param name="robot_description_semantic" textfile="$( find turtlebot_arm_moveit_config)/config/pincher_arm.srdf" />
 
   <node name="block_manipulation_demo" pkg="turtlebot_arm_block_manipulation" type="block_manipulation_demo" output="screen" >
     <param name="arm_link" value="/arm_base_link" />

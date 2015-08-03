@@ -81,11 +81,7 @@
 *
 * When you have read the above statements
 * remove the space between the asterisk and slash below:
-
-Y = 52cm
-X = 15cm
-Z= 30cm
-*/
+* /
 
 
 
@@ -190,7 +186,6 @@ public:
   
   void detectBlocks()
   {
-    ROS_INFO(" TWO ");
   // Have Block Detection Server detect blocks and callback "addBlocks" when done
     block_detection_action_.sendGoal(block_detection_goal_, boost::bind( &BlockManipulationAction::addBlocks, this, _1, _2));
   }
@@ -250,8 +245,6 @@ public:
 
     if (once)
       ros::shutdown();
-
-
             
     if (blockIndex < blockCount && armMode == "m")
       organizeBlocks();
@@ -364,9 +357,7 @@ int main(int argc, char** argv)
     
      std::string instr;
      getline (std::cin, instr );
-
-      ROS_INFO(" ONE ");
-
+     
      if (instr == "d") {manip.detectBlocks(); manip.armMode="d";}
      if (instr == "m") {manip.organizeBlocks();manip.armMode="m";}
   }

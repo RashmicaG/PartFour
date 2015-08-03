@@ -165,7 +165,6 @@ public:
     nh_.param<double>("/block_manipulation_demo/z_adj", z_adj, 0.0);
     
     ROS_INFO("Adjustments %.4f %.4f %.4f", (float) x_adj, (float) y_adj,(float) z_adj);
-    ROS_INFO(" THREE");
   }
 
   void preemptCB()
@@ -177,22 +176,18 @@ public:
 
   void cloudCb(const sensor_msgs::PointCloud2ConstPtr& msg)
   {
-
     // Only do this if we're actually actively working on a goal.
     if (!as_.isActive())
       return;
-    ROS_ERROR(" FOUR  - from line 129");
+
     result_.blocks.header.stamp = msg->header.stamp;
 
     // convert to PCL
     pcl::PointCloud < pcl::PointXYZRGB > cloud;
     pcl::fromROSMsg(*msg, cloud);
 
-
-
     // transform to whatever frame we're working in, probably the arm frame.
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZRGB>);
-
 
     tf_listener_.waitForTransform(std::string(arm_link_), cloud.header.frame_id,
                                   ros::Time(cloud.header.stamp), ros::Duration(1.0));
@@ -219,40 +214,10 @@ public:
     pass.setInputCloud(cloud_transformed);
     pass.setFilterFieldName("z");
 
-    // pass.setFilterLimits(table_height_ - 0.05, table_height_ + block_size_ + 0.05);
-     pass.setFilterLimits(table_height_ - 0.15, table_height_ + block_size_ + 0.15);
-
-    ROS_INFO("%f, %f",table_height_, table_height_ + block_size_);
-    ROS_INFO("%f, %f",table_height_ - 0.15, table_height_ + block_size_ + 0.15);
-
-    ROS_INFO("msg width %i", msg->width);
-    ROS_INFO("msg height %i", msg->height);
-
-    ROS_INFO("cloud width %i", cloud.width);
-    ROS_INFO("cloudheight %i", cloud.height);
-
-    ROS_INFO("cloud_transformed width %i", cloud_transformed->width);
-    ROS_INFO("cloud_transformed height %i", cloud_transformed->height);
-
-    ROS_INFO("cloud_filtered width %i", cloud_filtered->width);
-    ROS_INFO("cloud_filtered height %i", cloud_filtered->height);
-
-
-
-    if (cloud_filtered->points.size() == 0)
-    {
-      ROS_INFO(" zero before filter");
-      
-    }else
-    {
-      ROS_INFO(" nnot zero before filter");
-    }
-
-
+    pass.setFilterLimits(table_height_ - 0.05, table_height_ + block_size_ + 0.05);
     pass.filter(*cloud_filtered);
     if (cloud_filtered->points.size() == 0)
     {
-      ROS_INFO("  SIX");
       ROS_ERROR("0 points left");
       return;
     }
@@ -387,12 +352,12 @@ public:
         else 
              {
              ROS_INFO("Does not match Target Color");
-             zmax = COLOR_MATCH; //removed this because I don't care about colours for now
+             zmax = NO_COLOR_MATCH;
              }
         
         ROS_INFO("Adding a new block! x=%.3f y=%.3f z=%.3f", (float) xmin , (float) ymin , zmax );
         
-        // if (xmin > .11 && xmin < .29)  // TODO - remove hardcoded validation for x  //this fixed it to recognising blocks in a narrow band
+        if (xmin > .11 && xmin < .29)  // TODO - remove hardcoded validation for x
            addBlock(xmin , ymin , zmax , angle, (unsigned long) blueSum/pixelCount);
       }
     }
@@ -507,7 +472,7 @@ private:
    to be "if (false)" so that the adjustments are used.
    
    ***** remove the space between the asterisk and slash below.
-*/
+* /
 
   void adjustBlock(float *x, float *y, float *z)
   {

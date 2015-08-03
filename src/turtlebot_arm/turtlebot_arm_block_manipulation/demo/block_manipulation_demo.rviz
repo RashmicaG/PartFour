@@ -6,9 +6,10 @@ Panels:
       Expanded:
         - /MotionPlanning1/Planned Path1
         - /DepthCloud1/Auto Size1
+        - /TF1
         - /TF1/Frames1
       Splitter Ratio: 0.40146
-    Tree Height: 320
+    Tree Height: 525
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -147,7 +148,7 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          gripper_active_finger_link:
+          gripper_active2_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -157,21 +158,16 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          gripper_finger_base_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           gripper_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
           gripper_servo_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_static_finger_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_static_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -312,7 +308,7 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          gripper_active_finger_link:
+          gripper_active2_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -322,21 +318,16 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          gripper_finger_base_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           gripper_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
           gripper_servo_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_static_finger_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          gripper_static_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -493,19 +484,111 @@ Visualization Manager:
       Topic: /target_pose
       Value: true
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        arm_base_link:
+          Value: true
+        arm_elbow_F10_0_link:
+          Value: false
+        arm_elbow_F10_1_link:
+          Value: false
+        arm_elbow_F10_2_link:
+          Value: false
+        arm_elbow_F3_0_link:
+          Value: false
+        arm_elbow_flex_link:
+          Value: false
+        arm_elbow_flex_servo_link:
+          Value: false
+        arm_shoulder_F10_0_link:
+          Value: false
+        arm_shoulder_F10_1_link:
+          Value: false
+        arm_shoulder_F10_2_link:
+          Value: false
+        arm_shoulder_F3_0_link:
+          Value: false
+        arm_shoulder_lift_link:
+          Value: false
+        arm_shoulder_lift_servo_link:
+          Value: false
+        arm_shoulder_pan_link:
+          Value: false
+        arm_shoulder_pan_servo_link:
+          Value: false
+        arm_wrist_F3_0_link:
+          Value: false
+        arm_wrist_flex_link:
+          Value: false
+        arm_wrist_flex_servo_link:
+          Value: false
+        base_link:
+          Value: false
+        camera_depth_frame:
+          Value: false
+        camera_depth_optical_frame:
+          Value: false
+        camera_link:
+          Value: false
+        camera_rgb_frame:
+          Value: false
+        camera_rgb_optical_frame:
+          Value: false
+        gripper_active2_link:
+          Value: false
+        gripper_active_link:
+          Value: false
+        gripper_finger_base_link:
+          Value: false
+        gripper_link:
+          Value: false
+        gripper_servo_link:
+          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        base_link:
+          arm_base_link:
+            arm_shoulder_pan_servo_link:
+              arm_shoulder_pan_link:
+                arm_shoulder_lift_servo_link:
+                  arm_shoulder_lift_link:
+                    arm_shoulder_F10_0_link:
+                      arm_shoulder_F10_1_link:
+                        arm_shoulder_F10_2_link:
+                          arm_shoulder_F3_0_link:
+                            arm_elbow_flex_servo_link:
+                              arm_elbow_flex_link:
+                                arm_elbow_F10_0_link:
+                                  arm_elbow_F10_1_link:
+                                    arm_elbow_F10_2_link:
+                                      arm_elbow_F3_0_link:
+                                        arm_wrist_flex_servo_link:
+                                          arm_wrist_flex_link:
+                                            arm_wrist_F3_0_link:
+                                              gripper_servo_link:
+                                                gripper_active2_link:
+                                                  {}
+                                                gripper_active_link:
+                                                  {}
+                                                gripper_finger_base_link:
+                                                  {}
+                                            gripper_link:
+                                              {}
+          camera_link:
+            camera_depth_frame:
+              camera_depth_optical_frame:
+                {}
+            camera_rgb_frame:
+              camera_rgb_optical_frame:
+                {}
       Update Interval: 0
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -533,24 +616,24 @@ Visualization Manager:
         Z: 8.08975e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.429801
+      Pitch: 0.219801
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 5.53498
+      Yaw: 0.481794
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 990
+  Height: 744
   Help:
     collapsed: false
   Hide Left Dock: false
   Hide Right Dock: false
   Motion Planning:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000001000000000000022a0000038efc0200000006fb000000100044006900730070006c0061007900730100000033000001d1000000d801000005fb0000000800480065006c00700000000342000000bb0000007101000005fb0000000a0056006900650077007300000003b0000000b0000000ab01000005fb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000207000001ba0000015601000005fb0000000a0049006d006100670065000000030a000000b70000000000000000000005530000038e00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000002a2000002a2fc0200000006fb000000100044006900730070006c0061007900730100000028000002a2000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a0056006900650077007300000003b0000000b0000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670000000114000001b6000001ab00fffffffb0000000a0049006d006100670065000000030a000000b700000000000000000000026d000002a200000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 1920
-  X: 0
-  Y: 35
+  Width: 1301
+  X: 65
+  Y: 24

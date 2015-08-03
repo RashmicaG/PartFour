@@ -9,4 +9,6 @@
   <node name="interactive_manipulation_action_server" pkg="turtlebot_arm_block_manipulation" type="interactive_manipulation_action_server" output="screen">
   </node>
 
+  <param name="robot_description_semantic" textfile="$( find turtlebot_arm_moveit_config)/config/pincher_arm.srdf" />
+
 </launch>

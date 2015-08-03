@@ -59,7 +59,8 @@ const double gripper_closed = 0.024;
 const double z_up = 0.08;
 const double z_down = -0.04;
 
-const double block_size = 0.0127;
+// const double block_size = 0.0127;
+const double block_size = 0.02;
 
 // Block storage
 class Block
