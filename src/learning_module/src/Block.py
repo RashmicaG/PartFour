@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul 17 16:24:02 2015
+
+@author: Prashanth
+"""
+
+class Block:
+    def __init__(self, label, shape, size, colour):
+        self.label = label
+        self.shape = shape
+        self.size = size
+        self.colour = colour
+        """END"""
+    def getLabel(self):
+        return self.label
+    def getShape(self):
+        return self.shape
+    def getSize(self):
+        return self.size
+    def getColour(self):
+        return self.colour
