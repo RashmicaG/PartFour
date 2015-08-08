@@ -12,20 +12,6 @@ from std_msgs.msg import Int16
 
 # TODO: move files to common
 
-class RuleCache:
-
-    def __init__(self):
-        self.constants = []
-        self.goals = []
-        self.observations = []
-
-class Door:
-    def __init__(self):
-        self.name = ''
-        self.area = ['', '']
-
-    def __str__(self):
-        return str(self.name) + ' connected to ' + str(self.area[0]) + ', ' + str(self.area[1])
 
 
 class ASPInterface:
@@ -34,7 +20,6 @@ class ASPInterface:
     def __init__(self, solver_path, asp_path):
 
         # Stores rules generated in this timestep. Useful so we can look for rule duplicates/conflicts
-        # self.ruleCache = RuleCache()
         self.solver_path = solver_path
         self.asp_path = asp_path
         self.current_timestep = 0
@@ -43,6 +28,7 @@ class ASPInterface:
         self.iterator = 0
         self.timestep = 0
         self.observations = []
+        self.table = 0
 
         #TODO: add lauch file with parameter solver path and dlv path
 
@@ -50,6 +36,7 @@ class ASPInterface:
         # srv_query = rospy.Service('AspQuery', AspQuery, self.queryHandler)
         srv_addObs = rospy.Service('AspAddObservation', AspAddObservation, self.addObservationHandler)
         srv_answer = rospy.Service('AspAnswer', AspAnswer, self.answerHandler)
+        srv_state = rospy.Service('AspCurrentState', AspCurrentState, self.addCurrentState)
 
 
     def solve(self, mode, timeStep, pfilter='', goal=''):
@@ -82,13 +69,14 @@ class ASPInterface:
             fpath_constants = os.path.join(os.path.dirname(__file__), 'constants.sp')
             fpath_rules = os.path.join(os.path.dirname(__file__),'rules.sp')
             fpath_initial = os.path.join(os.path.dirname(__file__),'initial.sp')
+            fpath_config = os.path.join(os.path.dirname(__file__),'test.sp')
             fpath_history = os.path.join(os.path.dirname(__file__),'history.sp')
             fpath_output = os.path.join(os.path.dirname(__file__),'merged.sp')
             fpath_planner= os.path.join(os.path.dirname(__file__), 'planning.sp')
             fpath_explainer= os.path.join(os.path.dirname(__file__), 'explanation.sp')
             fpath_goal = os.path.join(os.path.dirname(__file__),'goal.sp')
 
-            filenames = [fpath_constants, fpath_rules, fpath_initial, fpath_history]
+            filenames = [fpath_constants, fpath_rules, fpath_initial, fpath_config, fpath_history]
            
             if mode == 'planning':
                 filenames.append(fpath_planner)
@@ -113,6 +101,38 @@ class ASPInterface:
         pass
 
 
+    def addCurrentState(self, state):
+        """ This parses the state of blocks into ASP"""
+        surface  = 0
+        config = state.current_state.configuration.config
+        size = len(state.current_state.block_properties)
+        self.table = size
+
+        # num surfaces = size
+        # num blocks = size -1
+
+
+        fpath_config = os.path.join(os.path.dirname(__file__),'test.sp')
+        with open( fpath_config, 'w') as outfile:
+
+            outfile.write('has_surface(tab0, s' + str(size) + ').\n')
+
+            for block in state.current_state.block_properties:
+                print surface
+                outfile.write('has_size('+ block.label +', ' + block.size + ').\n')
+                outfile.write('has_colour('+ block.label +', ' + block.colour + ').\n')
+                outfile.write('has_shape('+ block.label +', ' + block.shape + ').\n')
+                outfile.write('has_surface('+ block.label +', s' + str(surface)+ ').\n')
+
+                if config[surface] == -1: #error IndexError: tuple index out of range
+                    outfile.write('holds(on(' + block.label + ', s' + str(size) + '), 0).\n')
+                else:
+                    outfile.write('holds(on(' + block.label + ', s' + str(config[surface]) + '), 0).\n')
+                surface = surface +1
+
+        # if all is ok 
+        return True
+
     def querySurface(self, surface):
         """ This function takes a surface and returns 
         the object that this surface belongs to"""
@@ -131,13 +151,33 @@ class ASPInterface:
     def answerHandler(self, goal=''):
         """ Function called when a node calls AspAnswer service.
         Attempts to generate a plan for the goal that is given."""
-        if goal.goal != self.goal:
+        print goal.goal.config
+
+        string =  'goal(I) :- '
+        index = 0
+
+        for block in goal.goal.config:
+
+            print block
+            string +=  ' holds(on(block' + str(index) + ', s' 
+            if block == -1:
+                string += str(self.table) + '), I),'
+            else:
+                string += str(block) + '), I),'
+            index += 1
+
+        string = string[:-1] + '.'
+
+        print string
+
+
+        if string != self.goal:
             try:
                 print 'new goal!'
-                self.goal = goal.goal
+                self.goal = string
                 self.iterator = 0
                 timestep = self.timestep
-                max_timestep = 10
+                max_timestep = 17
 
                 while(timestep <max_timestep):
                      #  Solve and read
@@ -150,7 +190,7 @@ class ASPInterface:
                         timestep += 1
                     else:
                        return AspAnswerResponse(parsed=self.current_plan[self.iterator])
-             except:
+            except:
                 print "An error occured in answerHandler"
         else:
             try:
@@ -192,6 +232,7 @@ class ASPInterface:
                     block = arglist[1]
                     if action == 'put_down':
                         surface = arglist[2]
+                        print surface
                         # find out which object the surface belongs to
                         destBlock = self.querySurface(surface)
                     else:
@@ -218,9 +259,6 @@ class ASPInterface:
         self.checkNewObservations()
         
 
-    def newGoalCallback(self, goal):
-        pass # don't think we will need this
-
     def checkNewObservations(self):
         """ Checks if new observations are valid
         observation type and then appends them."""
@@ -237,6 +275,36 @@ class ASPInterface:
         else:
             return
 
+    def getExpectedState(self):
+        # get answer set
+
+        # filter for timestep of being one more than action
+        self.goal = 'goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).'
+
+
+        state = []
+        fpath_answer = self.solve('planning', 4, pfilter='holds')
+        with open(fpath_answer, 'r') as infile:
+            raw = infile.read()
+            if len(raw) <2:
+                pass
+            else:
+                raw = re.findall("\{(.*?)\}", raw)[0]  # The answer set is inside the squiggly brackets {}
+                # remove spaces between steps
+                raw = raw.replace(' ', '')
+                # remove occurs and save steps in a list
+                anslist = raw.split('holds')
+                for obs in anslist:
+                    if str(4)+')' in obs and '(on(block' in obs:
+                        state.append(obs)
+        set(state)
+        print state
+        # print set
+
+        
+
+
+
 
 if __name__ == "__main__":
 
@@ -250,16 +318,9 @@ if __name__ == "__main__":
 
     print "Ready to service queries"
 
-    kb.checkNewObservations()
+    # kb.checkNewObservations()
+    # kb.getExpectedState()
     rospy.spin()
     
-   
-    # kb.merge('explanation')
-    # kb.answerHandler('asdf')
-    # print kb.current_plan
-
-    # kb.solve(5, "pfilter= occurs")
-
-    # kb.doorsToObservations()
-
+ 
 
