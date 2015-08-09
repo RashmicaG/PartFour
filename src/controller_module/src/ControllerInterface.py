@@ -233,8 +233,7 @@ class Robot:
         print 'execute'
 
         # when no answer set, this breaks. FIX
-        while(not self.currentAction.parsed.goalAchieved):
-            print self.sendGoalToAspModule()
+        # self.sendGoalToAspModule()
 
 
         self.state = 'feedback'
@@ -242,13 +241,21 @@ class Robot:
     def feedback(self):
         print 'feedback'
 
+
+        expectedConfig = self.currentAction.parsed.config
+        config = expectedConfig
+
+        print expectedConfig   
+
         if config != expectedConfig:
             print 'FAILURE'
-        elif config == goalConfig:
+            self.state = 'learning'
+        elif config == self.goalConfig:
             print 'GOAL"'
+            self.state = 'learning'
         else:
             print 'on the way to our goooooal'
-        self.state = 'learning'
+            self.state = 'plan'
 
     def learning(self):
         print 'learning'
@@ -273,10 +280,10 @@ if __name__ == '__main__':
 
     car = 0
 
-    while(car<4):
+    while(r.state != 'learning'):
         # pass
         states[r.state]()
-        car +=1
+        
 
     
     timestep_publisher = rospy.Publisher('/controller/timestep', Int16, queue_size=10)
