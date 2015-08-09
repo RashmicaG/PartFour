@@ -8,9 +8,10 @@
 #const numRobots = 0.
 #const n = 3.
 #const numTables = 0.
-#const numSurfaces = 5.
-#const numBlocks = 4. 
-#const numSteps = 10.
+
+#const numSurfaces = 4.
+#const numBlocks = 3. 
+#const numSteps = 4.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  sorts
@@ -399,7 +400,7 @@ has_size(block1, small).
 has_colour(block1, red).
 has_shape(block1, prism).
 has_surface(block1, s1).
-holds(on(block1, s0), 0).
+holds(on(block1, s2), 0).
 has_size(block2, small).
 has_colour(block2, blue).
 has_shape(block2, cube).
@@ -432,4 +433,4 @@ occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
 :- #step(I),
    not something_happened(I),
    something_happened(I+1).
-goal(I) :-  holds(on(block0, s1), I), holds(on(block1, s2), I), holds(on(block2, s0), I), holds(on(block3, s4), I).
+goal(I) :-  holds(on(block0, s1), I), holds(on(block1, s4), I), holds(on(block2, s3), I), holds(on(block3, s4), I).

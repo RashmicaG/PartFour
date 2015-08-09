@@ -19,7 +19,7 @@ class Robot:
         self.goalQueue = [] # how to initialise queue.?
         self.goalConfig = Configuration([])
         self.currentState = State(Configuration([]), [] )
-        self.currentAction = Action('null', 'null', 'null', 0, False)
+        self.currentAction = Action('null', 'null', 'null', 0, Configuration([]),  False)
 
         self.block = Block('h1', 'sdf', 'asdfas', 'asdf')
 
@@ -208,9 +208,11 @@ class Robot:
         # CHECK IF NEW CONFIGURATION OF BLOCKS HAS ARRIVED
         # TO DO
         self.generateBlockConfig('hi')
+        self.goalConfig  = self.currentState.configuration
 
-        # generate goal configuration
-        self.generateBlockConfig('goal')
+        # generate goal configuration and make sure it is different from initial
+        while( self.goalConfig  == self.currentState.configuration):
+            self.generateBlockConfig('goal')
 
         # Now we are ready to plan
         self.state = 'plan'
@@ -230,6 +232,7 @@ class Robot:
     def execute(self):
         print 'execute'
 
+        # when no answer set, this breaks. FIX
         while(not self.currentAction.parsed.goalAchieved):
             print self.sendGoalToAspModule()
 
@@ -238,6 +241,13 @@ class Robot:
 
     def feedback(self):
         print 'feedback'
+
+        if config != expectedConfig:
+            print 'FAILURE'
+        elif config == goalConfig:
+            print 'GOAL"'
+        else:
+            print 'on the way to our goooooal'
         self.state = 'learning'
 
     def learning(self):

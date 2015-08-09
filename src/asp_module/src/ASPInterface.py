@@ -22,13 +22,12 @@ class ASPInterface:
         # Stores rules generated in this timestep. Useful so we can look for rule duplicates/conflicts
         self.solver_path = solver_path
         self.asp_path = asp_path
-        self.current_timestep = 0
         self.current_plan = []
         self.goal = 'null'
         self.iterator = 0
         self.timestep = 0
         self.observations = []
-        self.table = 0
+        self.tableSurface = 0
 
         #TODO: add lauch file with parameter solver path and dlv path
 
@@ -36,7 +35,7 @@ class ASPInterface:
         # srv_query = rospy.Service('AspQuery', AspQuery, self.queryHandler)
         srv_addObs = rospy.Service('AspAddObservation', AspAddObservation, self.addObservationHandler)
         srv_answer = rospy.Service('AspAnswer', AspAnswer, self.answerHandler)
-        srv_state = rospy.Service('AspCurrentState', AspCurrentState, self.addCurrentState)
+        srv_state = rospy.Service('AspCurrentState', AspCurrentState, self.addNewBlocks)
 
 
     def solve(self, mode, timeStep, pfilter='', goal=''):
@@ -91,6 +90,8 @@ class ASPInterface:
                     with open(fname) as infile:
                         outfile.write(infile.read())
                     if fname is fpath_constants:
+                        outfile.write('#const numSurfaces = ' + str(self.tableSurface) + '.\n')  #tableSurface is the number of surfaces we need
+                        outfile.write('#const numBlocks = ' + str(self.tableSurface-1) + '. \n')
                         outfile.write("#const numSteps = " + str(timeStep) + ".\n")
                     elif fname is fpath_planner:
                         outfile.write(self.goal)
@@ -100,21 +101,19 @@ class ASPInterface:
     def addObservationHandler(self, observation):
         pass
 
+    def addNewBlocks(self, state):
+        """ This function discards the previous block
+        configuration and generates the ASP rules for 
+        the given state"""
 
-    def addCurrentState(self, state):
-        """ This parses the state of blocks into ASP"""
         surface  = 0
         config = state.current_state.configuration.config
         size = len(state.current_state.block_properties)
-        self.table = size
-
-        # num surfaces = size
-        # num blocks = size -1
+        self.tableSurface = size
 
 
         fpath_config = os.path.join(os.path.dirname(__file__),'test.sp')
         with open( fpath_config, 'w') as outfile:
-
             outfile.write('has_surface(tab0, s' + str(size) + ').\n')
 
             for block in state.current_state.block_properties:
@@ -137,8 +136,9 @@ class ASPInterface:
         """ This function takes a surface and returns 
         the object that this surface belongs to"""
         try:
+            print surface            
             pattern = 'has_surface(.*?, ' + surface + ').'
-            fpath_initial = os.path.join(os.path.dirname(__file__), 'initial.sp')
+            fpath_initial = os.path.join(os.path.dirname(__file__), 'test.sp')
             for line in open(fpath_initial):
                 for match in re.findall(pattern, line):
                     # isolate block
@@ -161,14 +161,12 @@ class ASPInterface:
             print block
             string +=  ' holds(on(block' + str(index) + ', s' 
             if block == -1:
-                string += str(self.table) + '), I),'
+                string += str(self.tableSurface) + '), I),'
             else:
                 string += str(block) + '), I),'
             index += 1
 
         string = string[:-1] + '.'
-
-        print string
 
 
         if string != self.goal:
@@ -184,12 +182,15 @@ class ASPInterface:
                     fpath_answer = self.solve('planning', timestep, pfilter='occurs')
                     with open(fpath_answer, 'r') as infile:
                         raw = infile.read()
-                        self.parse_answer(raw)
+                        self.parse_answer(raw, timestep)
+                        print 'plan'
                         print self.current_plan
                     if not self.current_plan:
                         timestep += 1
                     else:
-                       return AspAnswerResponse(parsed=self.current_plan[self.iterator])
+                        print'debug'
+                        print self.current_plan[self.iterator]
+                        return AspAnswerResponse(parsed=self.current_plan[self.iterator])
             except:
                 print "An error occured in answerHandler"
         else:
@@ -198,12 +199,13 @@ class ASPInterface:
                 self.iterator += 1
                 return AspAnswerResponse(parsed=self.current_plan[self.iterator])
             except IndexError:
-                return AspAnswerResponse(parsed= Action(action = 'null', actionableBlock = 'null', destinationBlock = 'null', timestep=0, goalAchieved = True))
+                return AspAnswerResponse(parsed= Action(action = 'null', actionableBlock = 'null', destinationBlock = 'null', timestep=0, config = Configuration([]), goalAchieved = True))
             
 
 
-    def parse_answer(self, raw):
+    def parse_answer(self, raw, timestep):
         """ This parses an answer set, looking for actions with blocks"""
+        # try:
         parsed =[] # Use this to save list of SubGoals
         if len(raw) <2:
             pass
@@ -213,6 +215,8 @@ class ASPInterface:
             raw = raw.replace(' ', '')
             # remove occurs and save steps in a list
             anslist = raw.split('occurs')
+
+            self.solve('planning', timestep, pfilter='holds')
 
             for step in anslist:
                 if step:
@@ -232,17 +236,21 @@ class ASPInterface:
                     block = arglist[1]
                     if action == 'put_down':
                         surface = arglist[2]
-                        print surface
                         # find out which object the surface belongs to
                         destBlock = self.querySurface(surface)
                     else:
                         destBlock = 'null'
 
-                    parsed.insert(int(timestep),(Action(action = action, actionableBlock = block, destinationBlock = destBlock, timestep=int(timestep), goalAchieved = False)))
+                     
+                    # self.AspToConfig(self.getExpectedConfig(timestep))
 
+                    parsed.insert(int(timestep),(Action(action = action, actionableBlock = block, destinationBlock = destBlock, timestep=int(timestep), config =self.getExpectedConfig(timestep), goalAchieved = False)))
+
+        parsed.sort(key=lambda x: int(x.timestep))
         self.current_plan = parsed
         return 
-
+        # except:
+            # print 'error occured in parsing'
 
 
     def newTimestepCallback(self, timestep):
@@ -275,33 +283,62 @@ class ASPInterface:
         else:
             return
 
-    def getExpectedState(self):
-        # get answer set
-
-        # filter for timestep of being one more than action
-        self.goal = 'goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).'
-
+    def getExpectedConfig(self, timestep):
 
         state = []
-        fpath_answer = self.solve('planning', 4, pfilter='holds')
-        with open(fpath_answer, 'r') as infile:
+        fpath_answer = os.path.join(os.path.dirname(__file__),'asp.answer')
+       
+        # for line in open(fpath_answer):
+        anslist = []
+        with open(fpath_answer) as infile:
             raw = infile.read()
-            if len(raw) <2:
-                pass
-            else:
-                raw = re.findall("\{(.*?)\}", raw)[0]  # The answer set is inside the squiggly brackets {}
-                # remove spaces between steps
-                raw = raw.replace(' ', '')
-                # remove occurs and save steps in a list
-                anslist = raw.split('holds')
-                for obs in anslist:
-                    if str(4)+')' in obs and '(on(block' in obs:
-                        state.append(obs)
-        set(state)
-        print state
-        # print set
+            raw = re.findall("\{(.*?)\}", raw)[0]  # The answer set is inside the squiggly brackets {}
+            # remove spaces between steps
+            anslist = raw.split(' ')
+            pattern = 'holds\(on\(block.*?,s.*?\),'+ str(int(timestep) +1) + '\)'
+            print 'match'
+            matches=[]
+            for thing in anslist:
+                for match in re.findall(pattern, thing):
+                    print match
+                    temp = re.findall("\((.*)\)", match)
+                    temp = temp[0].split(',')
+                    # isolate block id
+                    temp[0] =  int(re.search('\(block(.*)', temp[0]).group(1))
+                    # isolate surface
+                    temp[1] = re.search("(.*)\)", temp[1]).group(1)
+                    # replace with actual block or table
+                    temp[1] = self.querySurface(temp[1])
+                    temp[2] = int(temp[2])
+                    print temp
+                    if 'tab' in temp[1] :
+                        temp[1] = -1 
+                    else:
+                        temp[1] =  int(re.search('block(.*)', temp[1]).group(1))
+                    print temp
+                    # now first element is block id, second element is the block that 
+                    # the first block is on, the third element is the timestep
+                    matches.append(temp)
 
-        
+        matches.sort(key=lambda x: int(x[0]))
+        print matches
+        block_id = 0
+        temp = []
+        for block in matches:
+            if (block[0] != block_id):
+                # expected block id is in robot's hand
+                temp.append(-2)
+                block_id += 1
+            temp.append(block[1])
+            block_id += 1
+
+        if (-2 not in temp) and (self.tableSurface>len(temp)):
+            temp.append(-2)
+        print temp
+
+        return Configuration(temp)
+
+
 
 
 
@@ -318,8 +355,6 @@ if __name__ == "__main__":
 
     print "Ready to service queries"
 
-    # kb.checkNewObservations()
-    # kb.getExpectedState()
     rospy.spin()
     
  
