@@ -48,7 +48,10 @@ add_message_files(
     FILES
     Action.msg
     Observation.msg
-    Goal.msg
+    #Goal.msg
+    State.msg
+    Configuration.msg
+    Block.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -56,6 +59,7 @@ add_service_files(
   FILES
   AspAnswer.srv
   AspAddObservation.srv
+  AspCurrentState.srv
 )
 
 ## Generate actions in the 'action' folder

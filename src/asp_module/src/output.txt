@@ -1,0 +1,2 @@
+{occurs(pick_up(rob0,block1),0), occurs(put_down(rob0,block1,s3),1), occurs(pick_up(rob0,block2),2), occurs(put_down(rob0,block2,s1),3), occurs(put_down(rob0,block0,s2),5), occurs(pick_up(rob0,block0),4)}
+

@@ -12,20 +12,6 @@ from std_msgs.msg import Int16
 
 # TODO: move files to common
 
-class RuleCache:
-
-    def __init__(self):
-        self.constants = []
-        self.goals = []
-        self.observations = []
-
-class Door:
-    def __init__(self):
-        self.name = ''
-        self.area = ['', '']
-
-    def __str__(self):
-        return str(self.name) + ' connected to ' + str(self.area[0]) + ', ' + str(self.area[1])
 
 
 class ASPInterface:
@@ -34,15 +20,14 @@ class ASPInterface:
     def __init__(self, solver_path, asp_path):
 
         # Stores rules generated in this timestep. Useful so we can look for rule duplicates/conflicts
-        # self.ruleCache = RuleCache()
         self.solver_path = solver_path
         self.asp_path = asp_path
-        self.current_timestep = 0
         self.current_plan = []
         self.goal = 'null'
         self.iterator = 0
         self.timestep = 0
         self.observations = []
+        self.tableSurface = 0
 
         #TODO: add lauch file with parameter solver path and dlv path
 
@@ -50,6 +35,7 @@ class ASPInterface:
         # srv_query = rospy.Service('AspQuery', AspQuery, self.queryHandler)
         srv_addObs = rospy.Service('AspAddObservation', AspAddObservation, self.addObservationHandler)
         srv_answer = rospy.Service('AspAnswer', AspAnswer, self.answerHandler)
+        srv_state = rospy.Service('AspCurrentState', AspCurrentState, self.addNewBlocks)
 
 
     def solve(self, mode, timeStep, pfilter='', goal=''):
@@ -82,13 +68,14 @@ class ASPInterface:
             fpath_constants = os.path.join(os.path.dirname(__file__), 'constants.sp')
             fpath_rules = os.path.join(os.path.dirname(__file__),'rules.sp')
             fpath_initial = os.path.join(os.path.dirname(__file__),'initial.sp')
+            fpath_config = os.path.join(os.path.dirname(__file__),'test.sp')
             fpath_history = os.path.join(os.path.dirname(__file__),'history.sp')
             fpath_output = os.path.join(os.path.dirname(__file__),'merged.sp')
             fpath_planner= os.path.join(os.path.dirname(__file__), 'planning.sp')
             fpath_explainer= os.path.join(os.path.dirname(__file__), 'explanation.sp')
             fpath_goal = os.path.join(os.path.dirname(__file__),'goal.sp')
 
-            filenames = [fpath_constants, fpath_rules, fpath_initial, fpath_history]
+            filenames = [fpath_constants, fpath_rules, fpath_initial, fpath_config, fpath_history]
            
             if mode == 'planning':
                 filenames.append(fpath_planner)
@@ -103,6 +90,8 @@ class ASPInterface:
                     with open(fname) as infile:
                         outfile.write(infile.read())
                     if fname is fpath_constants:
+                        outfile.write('#const numSurfaces = ' + str(self.tableSurface) + '.\n')  #tableSurface is the number of surfaces we need
+                        outfile.write('#const numBlocks = ' + str(self.tableSurface-1) + '. \n')
                         outfile.write("#const numSteps = " + str(timeStep) + ".\n")
                     elif fname is fpath_planner:
                         outfile.write(self.goal)
@@ -112,13 +101,44 @@ class ASPInterface:
     def addObservationHandler(self, observation):
         pass
 
+    def addNewBlocks(self, state):
+        """ This function discards the previous block
+        configuration and generates the ASP rules for 
+        the given state"""
+
+        surface  = 0
+        config = state.current_state.configuration.config
+        size = len(state.current_state.block_properties)
+        self.tableSurface = size
+
+
+        fpath_config = os.path.join(os.path.dirname(__file__),'test.sp')
+        with open( fpath_config, 'w') as outfile:
+            outfile.write('has_surface(tab0, s' + str(size) + ').\n')
+
+            for block in state.current_state.block_properties:
+                print surface
+                outfile.write('has_size('+ block.label +', ' + block.size + ').\n')
+                outfile.write('has_colour('+ block.label +', ' + block.colour + ').\n')
+                outfile.write('has_shape('+ block.label +', ' + block.shape + ').\n')
+                outfile.write('has_surface('+ block.label +', s' + str(surface)+ ').\n')
+
+                if config[surface] == -1: #error IndexError: tuple index out of range
+                    outfile.write('holds(on(' + block.label + ', s' + str(size) + '), 0).\n')
+                else:
+                    outfile.write('holds(on(' + block.label + ', s' + str(config[surface]) + '), 0).\n')
+                surface = surface +1
+
+        # if all is ok 
+        return True
 
     def querySurface(self, surface):
         """ This function takes a surface and returns 
         the object that this surface belongs to"""
         try:
+            print surface            
             pattern = 'has_surface(.*?, ' + surface + ').'
-            fpath_initial = os.path.join(os.path.dirname(__file__), 'initial.sp')
+            fpath_initial = os.path.join(os.path.dirname(__file__), 'test.sp')
             for line in open(fpath_initial):
                 for match in re.findall(pattern, line):
                     # isolate block
@@ -131,26 +151,47 @@ class ASPInterface:
     def answerHandler(self, goal=''):
         """ Function called when a node calls AspAnswer service.
         Attempts to generate a plan for the goal that is given."""
-        if goal.goal != self.goal:
+        print goal.goal.config
+
+        string =  'goal(I) :- '
+        index = 0
+
+        for block in goal.goal.config:
+
+            print block
+            string +=  ' holds(on(block' + str(index) + ', s' 
+            if block == -1:
+                string += str(self.tableSurface) + '), I),'
+            else:
+                string += str(block) + '), I),'
+            index += 1
+
+        string = string[:-1] + '.'
+
+
+        if string != self.goal:
             try:
                 print 'new goal!'
-                self.goal = goal.goal
+                self.goal = string
                 self.iterator = 0
                 timestep = self.timestep
-                max_timestep = 10
+                max_timestep = 17
 
                 while(timestep <max_timestep):
                      #  Solve and read
                     fpath_answer = self.solve('planning', timestep, pfilter='occurs')
                     with open(fpath_answer, 'r') as infile:
                         raw = infile.read()
-                        self.parse_answer(raw)
+                        self.parse_answer(raw, timestep)
+                        print 'plan'
                         print self.current_plan
                     if not self.current_plan:
                         timestep += 1
                     else:
-                       return AspAnswerResponse(parsed=self.current_plan[self.iterator])
-             except:
+                        print'debug'
+                        print self.current_plan[self.iterator]
+                        return AspAnswerResponse(parsed=self.current_plan[self.iterator])
+            except:
                 print "An error occured in answerHandler"
         else:
             try:
@@ -158,12 +199,13 @@ class ASPInterface:
                 self.iterator += 1
                 return AspAnswerResponse(parsed=self.current_plan[self.iterator])
             except IndexError:
-                return AspAnswerResponse(parsed= Action(action = 'null', actionableBlock = 'null', destinationBlock = 'null', timestep=0, goalAchieved = True))
+                return AspAnswerResponse(parsed= Action(action = 'null', actionableBlock = 'null', destinationBlock = 'null', timestep=0, config = Configuration([]), goalAchieved = True))
             
 
 
-    def parse_answer(self, raw):
+    def parse_answer(self, raw, timestep):
         """ This parses an answer set, looking for actions with blocks"""
+        # try:
         parsed =[] # Use this to save list of SubGoals
         if len(raw) <2:
             pass
@@ -173,6 +215,8 @@ class ASPInterface:
             raw = raw.replace(' ', '')
             # remove occurs and save steps in a list
             anslist = raw.split('occurs')
+
+            self.solve('planning', timestep, pfilter='holds')
 
             for step in anslist:
                 if step:
@@ -197,11 +241,16 @@ class ASPInterface:
                     else:
                         destBlock = 'null'
 
-                    parsed.insert(int(timestep),(Action(action = action, actionableBlock = block, destinationBlock = destBlock, timestep=int(timestep), goalAchieved = False)))
+                     
+                    # self.AspToConfig(self.getExpectedConfig(timestep))
 
+                    parsed.insert(int(timestep),(Action(action = action, actionableBlock = block, destinationBlock = destBlock, timestep=int(timestep), config =self.getExpectedConfig(timestep), goalAchieved = False)))
+
+        parsed.sort(key=lambda x: int(x.timestep))
         self.current_plan = parsed
         return 
-
+        # except:
+            # print 'error occured in parsing'
 
 
     def newTimestepCallback(self, timestep):
@@ -217,9 +266,6 @@ class ASPInterface:
         self.observations.append(observation)
         self.checkNewObservations()
         
-
-    def newGoalCallback(self, goal):
-        pass # don't think we will need this
 
     def checkNewObservations(self):
         """ Checks if new observations are valid
@@ -237,6 +283,65 @@ class ASPInterface:
         else:
             return
 
+    def getExpectedConfig(self, timestep):
+
+        state = []
+        fpath_answer = os.path.join(os.path.dirname(__file__),'asp.answer')
+       
+        # for line in open(fpath_answer):
+        anslist = []
+        with open(fpath_answer) as infile:
+            raw = infile.read()
+            raw = re.findall("\{(.*?)\}", raw)[0]  # The answer set is inside the squiggly brackets {}
+            # remove spaces between steps
+            anslist = raw.split(' ')
+            pattern = 'holds\(on\(block.*?,s.*?\),'+ str(int(timestep) +1) + '\)'
+            print 'match'
+            matches=[]
+            for thing in anslist:
+                for match in re.findall(pattern, thing):
+                    print match
+                    temp = re.findall("\((.*)\)", match)
+                    temp = temp[0].split(',')
+                    # isolate block id
+                    temp[0] =  int(re.search('\(block(.*)', temp[0]).group(1))
+                    # isolate surface
+                    temp[1] = re.search("(.*)\)", temp[1]).group(1)
+                    # replace with actual block or table
+                    temp[1] = self.querySurface(temp[1])
+                    temp[2] = int(temp[2])
+                    print temp
+                    if 'tab' in temp[1] :
+                        temp[1] = -1 
+                    else:
+                        temp[1] =  int(re.search('block(.*)', temp[1]).group(1))
+                    print temp
+                    # now first element is block id, second element is the block that 
+                    # the first block is on, the third element is the timestep
+                    matches.append(temp)
+
+        matches.sort(key=lambda x: int(x[0]))
+        print matches
+        block_id = 0
+        temp = []
+        for block in matches:
+            if (block[0] != block_id):
+                # expected block id is in robot's hand
+                temp.append(-2)
+                block_id += 1
+            temp.append(block[1])
+            block_id += 1
+
+        if (-2 not in temp) and (self.tableSurface>len(temp)):
+            temp.append(-2)
+        print temp
+
+        return Configuration(temp)
+
+
+
+
+
 
 if __name__ == "__main__":
 
@@ -250,16 +355,7 @@ if __name__ == "__main__":
 
     print "Ready to service queries"
 
-    kb.checkNewObservations()
     rospy.spin()
     
-   
-    # kb.merge('explanation')
-    # kb.answerHandler('asdf')
-    # print kb.current_plan
-
-    # kb.solve(5, "pfilter= occurs")
-
-    # kb.doorsToObservations()
-
+ 
 
