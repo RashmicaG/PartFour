@@ -77,24 +77,25 @@ class MDP:
                     action.setVisited(False)
                 self.probmat[state.getLabel()][action.getNextStateAddr()] = 1.0/len(state.getActions())
                 self.distance_matrix[state.getLabel()][action.getNextStateAddr()] = 1
-        self.rewardmat = [[-1.0 for i in range(0,len(self.statelist))] for i in range(0,len(self.statelist))]
+        self.rewardmat = [-0.25 for i in range(0,len(self.statelist))]
         """END"""
-    def simulation(self, errorstate, error_action_chosen):
-        self.rewardmat[errorstate.getLabel()][error_action_chosen.getNextStateAddr()] = 5
-        for i in range(0,10000):
+    def simulation(self, errorstate, stackstate):
+        #self.rewardmat[errorstate.getLabel()][error_action_chosen.getNextStateAddr()] = 5
+        #self.reward_matrix = reward_matrix
+        for state in stackstate:
+            self.rewardmat[state.getLabel()] = -2.2
+        self.rewardmat[errorstate.getLabel()] = 6.75
+        for i in range(0,2000):
             currentstate = r.choice(self.statelist)
-            action_chosen = currentstate.chooseStateAction(self.probmat[currentstate.getLabel()])
-            self.qLearning(currentstate, action_chosen)
-            self.updateProbabilityMatrix(self.probmat[currentstate.getLabel()], self.qmat[currentstate.getLabel()])            
             for state in self.statelist:
                 for action in state.getActions():
                     action.setVisited(False)
-            while(currentstate != errorstate and action_chosen !=error_action_chosen):
-                nextstate = self.statelist[action_chosen.getNextStateAddr()]
-                currentstate = nextstate
+            while(currentstate != errorstate):
                 action_chosen = currentstate.chooseStateAction(self.probmat[currentstate.getLabel()])
-                self.qLearning(currentstate, action_chosen)
+                nextstate = self.statelist[action_chosen.getNextStateAddr()]                
+                self.qLearning(currentstate,  action_chosen)
                 self.updateProbabilityMatrix(self.probmat[currentstate.getLabel()], self.qmat[currentstate.getLabel()])
+                currentstate = nextstate
         """END"""
     def onPolicyLearning(self, action_chosen=None):
         """
@@ -111,12 +112,12 @@ class MDP:
             self.errorstate = nextstate
             
     def qLearning(self, currentstate, action_chosen):
-        gamma = 1.0
-        alpha = 1.0/(action_chosen.getNumVisits() + 1.0)
-        reward = self.rewardmat[currentstate.getLabel()][action_chosen.getNextStateAddr()]
+        gamma = 0.75
+        alpha = 1.0/(action_chosen.getNumVisits() + 2.0)
+        reward = self.rewardmat[action_chosen.getNextStateAddr()]
         nextstate_maxqval = max(self.qmat[action_chosen.getNextStateAddr()])
         current_qval = self.qmat[currentstate.getLabel()][action_chosen.getNextStateAddr()]
-        current_qval += alpha*(reward + gamma*(nextstate_maxqval - current_qval))        
+        current_qval += alpha*(reward + gamma*(nextstate_maxqval) - current_qval)        
         if(action_chosen.isVisited() == False):
             action_chosen.incrementNumVisits()
             action_chosen.setVisited(True)
@@ -134,15 +135,14 @@ class MDP:
                 prob /= sum_val
                 probmat[i] = prob
         """END"""
-    def updateDistanceMatrix(self, errorstate, error_action_chosen):
+    def updateDistanceMatrix(self, errorstate):
         for state in self.statelist:
             for action in state.getActions():
                 currentstate = self.statelist[action.getNextStateAddr()]
-                action_chosen = currentstate.chooseBestStateAction(self.qmat[currentstate.getLabel()])
                 self.distance_matrix[state.getLabel()][action.getNextStateAddr()] += 1.0
-                while currentstate != errorstate and action_chosen != error_action_chosen:
+                while currentstate != errorstate:
+                    action_chosen = currentstate.chooseBestStateAction(self.qmat[currentstate.getLabel()])                    
+                    self.distance_matrix[state.getLabel()][action.getNextStateAddr()] += 1.0
                     nextstate = self.statelist[action_chosen.getNextStateAddr()]
                     currentstate = nextstate
-                    action_chosen = currentstate.chooseBestStateAction(self.qmat[currentstate.getLabel()])
-                    self.distance_matrix[state.getLabel()][action.getNextStateAddr()] += 1.0
 
