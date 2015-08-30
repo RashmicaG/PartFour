@@ -1,0 +1,8 @@
+prefix=/home/prashanth/PartFour/devel
+
+Name: controller_module
+Description: Description of controller_module
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/prashanth/PartFour/devel/lib 
+Requires: 

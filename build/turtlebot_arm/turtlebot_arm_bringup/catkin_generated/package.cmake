@@ -1,0 +1,7 @@
+set(_CATKIN_CURRENT_PACKAGE "turtlebot_arm_bringup")
+set(turtlebot_arm_bringup_MAINTAINER "Jorge Santos <jsantossimon@gmail.com>")
+set(turtlebot_arm_bringup_DEPRECATED "")
+set(turtlebot_arm_bringup_VERSION "0.3.3")
+set(turtlebot_arm_bringup_BUILD_DEPENDS )
+set(turtlebot_arm_bringup_RUN_DEPENDS "arbotix_python" "arbotix_controllers")
+set(turtlebot_arm_bringup_BUILDTOOL_DEPENDS "catkin")

@@ -4,59 +4,155 @@ Created on Wed Jul 15 12:16:58 2015
 
 @author: Prashanth
 """
+
+"""This is a Service Node. Any requests will be responded with outputs."""
+
+""" Onpolicy requests will be responded with a boolean (success/ failure)"""
+
 from MDP import MDP
 from Block import Block
 from State import State
 from copy import deepcopy
 from collections import OrderedDict
-from DecisionTree import *
-import csv
-def combineIdenticalMDPs(mdp_list):
-    sum_distance = [[0.0 for i in range(0,len(mdp_list[0].getStateList()))] for i in range(0,len(mdp_list[0].getStateList()))]
-    weighted_average = [[0.0 for i in range(0,len(mdp_list[0].getStateList()))] for i in range(0,len(mdp_list[0].getStateList()))]
-    for mdp in mdp_list:
-        for i, row in enumerate(mdp.getDistanceMatrix()):
-            for j, distance in enumerate(row):
-                if distance > 0:
-                    sum_distance[i][j] += 1/distance
-    for mdp in mdp_list:
-        for i, row in enumerate(mdp.getDistanceMatrix()):
-            for j, distance in enumerate(row):
-                if distance > 0.0 and sum_distance[i][j] > 0.0:
-                    weight = (1/distance)/(sum_distance[i][j])
-                    weighted_average[i][j] += weight*mdp.getQMatrix()[i][j]
-    
-    newMDP = deepcopy(mdp_list[0])
-    newMDP.setQMatrix(weighted_average)
-    return newMDP
-    
-def findState(config, mdp):
-    for state in mdp.getStateList():
-        if state.getConfiguration() == config:
-            return state
+from scipy import stats
+from scipy.cluster.vq import vq, kmeans, whiten
+import numpy
+import operator
 
-def writeToList(mdp_list, training_set = None):
-    if training_set == None:
-        training_set = []
-    for mdp in mdp_list:
-        blocks = mdp.getBlocks()
+#from asp_module.msg import State as StateMsg
+#from asp_module.msg import Configuration as ConfigMsg
+#from asp_module.msg import Block as BlockMsg
+from DecisionTree import *
+class LearningModule:
+    def __init__(self):
+        self.mdp_list = []
+        self.error_config = []
+        self.success_config = []
+        self.decision_tree = None
+        #src_error = rospy.Service('LMErrorHasOccured',LMErrorHasOccured, self.errorHandle)
+        #src_rules = rospy.Service('LMGenerateRules', LMGenerateRules, self.generateRules)
+        #srv_state = rospy.Service('LMCurrentState', LMCurrentState, self.initialise)
+        #srv_action = rospy.Service('LMStateActionTaken', LMStateActionTaken, self.onPolicyLearning)
+
+    def initialise_lists(self):
+        self.mdp_list.append([])
+        self.error_config.append([])
+        self.success_config.append([])
+    
+    def initialise_mdp(self):
+        blocks = []
+        for prop in StateMsg.block_properties:
+            block.append(Block(prop.label, prop.shape, prop.colour))
+        start_config = StateMsg.configuration
+        initialise_lists()
+        self.success_config[-1].append(start_config)
+        label = len(self.mdp_list[-1])
+        mdp = MDP(label, blocks)
+        startingState = State(0, start_config)
+        mdp.statelist.append(startingState)
+        mdp.initMDP(startingState)
+        self.mdp_list[-1].append(mdp)
+                
+    def combineIdenticalMDPs(self, mdp_list):
+        sum_distance = [[0.0 for i in range(0,len(mdp_list[0].getStateList()))] for i in range(0,len(mdp_list[0].getStateList()))]
+        weighted_average = [[0.0 for i in range(0,len(mdp_list[0].getStateList()))] for i in range(0,len(mdp_list[0].getStateList()))]
+        for mdp in mdp_list:
+            for i, row in enumerate(mdp.getDistanceMatrix()):
+                for j, distance in enumerate(row):
+                    if distance > 0:
+                        sum_distance[i][j] += 1/distance
+        for mdp in mdp_list:
+            for i, row in enumerate(mdp.getDistanceMatrix()):
+                for j, distance in enumerate(row):
+                    if distance > 0.0 and sum_distance[i][j] > 0.0:
+                        weight = (1/distance)/(sum_distance[i][j])
+                        weighted_average[i][j] += weight*mdp.getQMatrix()[i][j]
+        
+        newMDP = deepcopy(mdp_list[0])
+        newMDP.setQMatrix(weighted_average)
+        return newMDP
+        
+    def findState(self, config, mdp):
         for state in mdp.getStateList():
-            for action in state.getActions():
-                action_block = action.getActionableBlock()
-                dest_block = action.getDestinationBlock()
-                if dest_block == None:
-                    example = (blocks[action_block].getShape(), blocks[action_block].getColour(), 
-                               mdp.getQMatrix()[state.getLabel()][action.getNextStateAddr()])
-                else:
-                    example = (blocks[action_block].getShape(), 
-                               blocks[action_block].getColour(),blocks[dest_block].getShape(), 
-                               blocks[dest_block].getColour(),
-                               mdp.getQMatrix()[state.getLabel()][action.getNextStateAddr()])
-                training_set.append(example)
-    return training_set
+            if state.getConfiguration() == config:
+                return state
+    def errorHandle(self):
+        #action_chosen = getFromMessgae
+        self.mdp_list[-1][-1].onPolicyLearning(action_chosen)
+        self.mdp_list[-1].append([])
+        pass
+    def onPolicyLearning():
+        """ This will be the callback function"""
+        #action_chosen = getFromMessage
+        self.mdp_list[-1][-1].onPolicyLearning(action_chosen)
+        config = self.mdp_list[-1][-1].getErrorState().getConfig
+        self.success_config[-1].append(config)
+        """ Get the message and parse it to be passed into the function"""
+    
+    def writeToList(self, mdp_list, training_set = None):
+        if training_set == None:
+            training_set = []
+        for mdp in mdp_list:
+            blocks = mdp.getBlocks()
+            for state in mdp.getStateList():
+                for action in state.getActions():
+                    action_block = action.getActionableBlock()
+                    dest_block = action.getDestinationBlock()
+                    if dest_block == None:
+                        example = (blocks[action_block].getShape(), blocks[action_block].getColour(), 
+                                   mdp.getQMatrix()[state.getLabel()][action.getNextStateAddr()])
+                    else:
+                        example = (blocks[action_block].getShape(), 
+                                   blocks[action_block].getColour(),blocks[dest_block].getShape(), 
+                                   blocks[dest_block].getColour(),
+                                   mdp.getQMatrix()[state.getLabel()][action.getNextStateAddr()])
+                    training_set.append(example)
+        return training_set
+    
+    def generateRules(self, training_set):
+        reduced_mdp_list = []
+        attributes = []                
+        for mdps in self.mdp_list:
+            reduced_mdp = self.combineIdenticalMDPs(mdps)
+            reduced_mdp_list.append(reduced_mdp)
+        attribute_dict = [("has_shape(A,", ("Prism", "Cube", "Cuboid")), ("has_colour(A, ",("Red","Blue","Purple")), ("has_shape(D, ", ("Prism", "Cube", "Cuboid")), ("has_colour(D, ",("Red","Blue","Purple"))]
+        attribute_dict = OrderedDict(attribute_dict)
+        index = 0
+        names = attribute_dict.keys()
+        values = attribute_dict.values()
+        for name, vals in zip(names, values):
+            attributes.append(Attribute(name, index, vals))
+            index += 1
+        self.decision_tree = DecisionTree(attributes, training_set)
+        rules = decision_tree.createDecisionTree()
+        rules = selectRules(rules)
+        return rules
+    def selectRules(self, q_vals):
+        """ Select the best rules """
+        """ Think about doing it using SVM"""
+        pass
+    def reduceMDP(self,errorconfig, stack_config, start_config, blocks):
+        mdp_list = []
+        for i in range(0, len(errorconfig)):
+            mdp_list.append(MDP(i, blocks))
+            startingState = State(0, start_config)
+            mdp_list[i].statelist.append(startingState)
+            mdp_list[i].initMDP(startingState)
+            errorstate = self.findState(errorconfig[i], mdp_list[i])
+            stackstate = []
+            for j in range(0,len(stack_config)):
+                stackstate.append(self.findState(stack_config[j], mdp_list[i]))
+            mdp_list[i].simulation(errorstate, stackstate)
+            mdp_list[i].updateDistanceMatrix(errorstate)
+            
+        reduced_mdp = self.combineIdenticalMDPs(mdp_list)
+        return reduced_mdp
 
 def main():
     """The blocks"""
+
+    learning_module = LearningModule()    
+    
     blocks = []
     blocks.append(Block(0, "Cube", "Red"))
     blocks.append(Block(1, "Cube", "Blue"))
@@ -67,74 +163,57 @@ def main():
     Ideally should be the starting configuration of the blocks in the real world
     """
     config = [-1,-1,-1]
-    startingState = State(0, config)
     mdp_list = []
-    errorconfig = [[-1,0,-1],[-1,2,-1],[-1,0,1],[1,2,-1]]
-    stack_config = [[-1,-1,-1], [2,-1,-1]]
-    """Create A new MDP"""
-    for i in range(0,len(errorconfig)):
-        mdp_list.append(MDP(i, blocks))
-        startingState = State(0, config)
-        mdp_list[i].statelist.append(startingState)
-        mdp_list[i].initMDP(startingState)
-        errorstate = findState(errorconfig[i], mdp_list[i])
-        stackstate = []
-        for j in range(0,len(stack_config)):
-            stackstate.append(findState(stack_config[j], mdp_list[i]))
-        mdp_list[i].simulation(errorstate, stackstate)
-        mdp_list[i].updateDistanceMatrix(errorstate)
-    
-    mdp1 = combineIdenticalMDPs(mdp_list)
+
+    """Colour"""
+    errorconfig = [[-1,0,-1],[-1,2,-1],[1,-1,-1],[-1,-1,1],[-1,0,1],[1,2,-1],[1,-1,0],[2,-1,1]]
+    stack_config = [[-1,-1,-1],[-1,-1,0],[2,-1,-1]]
+    """Shape"""
+#    errorconfig = [[-1,0,-1],[-1,-1,0],[1,-1,0],[2,0,-1]]
+#    stack_config = [[-1,-1,-1],[1,-1,-1],[2,-1,-1],[-1,2,-1],[1,2,-1]]
+
+    """Create a new MDP"""
+
+    mdp1 = learning_module.reduceMDP(errorconfig, stack_config, config, blocks)
     
     blocks = []
-    blocks.append(Block(0, "Cuboid", "Blue"))
-    blocks.append(Block(1, "Cuboid", "Red"))
+    blocks.append(Block(0, "Cuboid", "Red"))
+    blocks.append(Block(1, "Cuboid", "Blue"))
     blocks.append(Block(2, "Cuboid", "Blue"))
     mdp_list = []
-    errorconfig = [[1,-1,0],[-1,0,-1],[-1,-1,0],[2,0,-1],[1,-1,-1],[-1,2,-1],[1,2,-1]]
-    stack_config = [[-1,-1,-1], [2,-1,-1]]
-    for i in range(0,len(errorconfig)):
-        mdp_list.append(MDP(i, blocks))
-        startingState = State(0, config)
-        mdp_list[i].statelist.append(startingState)
-        mdp_list[i].initMDP(startingState)
-        errorstate = findState(errorconfig[i], mdp_list[i])
-        stackstate = []
-        for j in range(0,len(stack_config)):
-            stackstate.append(findState(stack_config[j], mdp_list[i]))
-        mdp_list[i].simulation(errorstate, stackstate)
-        mdp_list[i].updateDistanceMatrix(errorstate)
-    
-    mdp2 = combineIdenticalMDPs(mdp_list)
+#    errorconfig = [[-1,0,-1],[-1,-1,0],[-1,2,-1],[-1,-1,1],[1,-1,-1]]
+#    stack_config = [[-1,-1,-1],[2,-1,-1]]
+    """Colour"""
+    errorconfig = [[-1,0,-1],[-1,-1,0],[1,-1,-1],[2,-1,-1],[1,-1,0],[2,0,-1],[-1,0,1],[-1,2,0]]
+    stack_config = [[-1,-1,-1],[-1,2,-1],[-1,-1,1]]
+    """Shape"""
+#    errorconfig = [[-1,0,-1],[-1,-1,0],[1,-1,0],[2,0,-1]]
+#    stack_config = [[-1,-1,-1],[1,-1,-1],[2,-1,-1],[-1,2,-1],[1,2,-1]]
+
+
+    mdp2 = learning_module.reduceMDP(errorconfig, stack_config, config, blocks)
     
     blocks = []
-    blocks.append(Block(0, "Prism", "Yellow"))
-    blocks.append(Block(1, "Cube", "Yellow"))
-    blocks.append(Block(2, "Cuboid", "Yellow"))
+    blocks.append(Block(0, "Cube", "Purple"))
+    blocks.append(Block(1, "Cuboid", "Purple"))
+    blocks.append(Block(2, "Cube", "Blue"))
     mdp_list = []
-    errorconfig = [[1,-1,0],[-1,0,-1],[-1,-1,0],[2,0,-1]]
-    stack_config = [[-1,-1,-1], [2,-1,-1],[1,-1,-1],[-1,2,-1],[1,2,-1]]    
-    for i in range(0,len(errorconfig)):
-        mdp_list.append(MDP(i, blocks))
-        startingState = State(0, config)
-        mdp_list[i].statelist.append(startingState)
-        mdp_list[i].initMDP(startingState)
-        errorstate = findState(errorconfig[i], mdp_list[i])
-        stackstate = []
-        for j in range(0,len(stack_config)):
-            stackstate.append(findState(stack_config[j], mdp_list[i]))
-        mdp_list[i].simulation(errorstate, stackstate)
-        mdp_list[i].updateDistanceMatrix(errorstate)
-    
-    mdp3 = combineIdenticalMDPs(mdp_list)
-    
-    
-    mdp_list = [mdp1, mdp2]#, mdp3]
-    training_set = writeToList(mdp_list)
+    """Colour"""
+    errorconfig = [[-1,-1,0],[-1,-1,1],[2,-1,-1],[-1,2,-1],[1,2,-1],[2,-1,1],[-1,2,0],[1,-1,0]]
+    stack_config = [[-1,-1,-1],[-1,0,-1],[1,-1,-1]]
+    """Shape"""
+#    errorconfig = [[-1,0,-1],[-1,-1,0],[1,-1,0],[2,0,-1]]
+#    stack_config = [[-1,-1,-1],[1,-1,-1],[2,-1,-1],[-1,2,-1],[1,2,-1]]   
 
-    attribute_dict = [("has_shape(A,", ("Prism", "Cube", "Cuboid")), ("has_colour(A, ",("Red","Blue","Yellow")), ("has_shape(D, ", ("Prism", "Cube", "Cuboid")), ("has_colour(D, ",("Red","Blue","Yellow"))]
+ 
+    mdp3 = learning_module.reduceMDP(errorconfig, stack_config, config, blocks)
+    
+    
+    mdp_list = [mdp1, mdp2, mdp3]
+    training_set = learning_module.writeToList(mdp_list)
+
+    attribute_dict = [("has_shape(A,", ("Prism", "Cube", "Cuboid")), ("has_colour(A, ",("Red","Blue","Purple")), ("has_shape(D, ", ("Prism", "Cube", "Cuboid")), ("has_colour(D, ",("Red","Blue","Purple"))]
     attribute_dict = OrderedDict(attribute_dict)
-    #rand_smpl = [ training_set[i] for i in sorted(random.sample(xrange(len(training_set)), len(training_set)/2))]
     attributes = []
     index = 0
     names = attribute_dict.keys()
@@ -144,9 +223,21 @@ def main():
         index += 1
     decision_tree = DecisionTree(attributes, training_set)
     #print training_set
-    tree = decision_tree.createDecisionTree()
-    #q_values = open('MDP_Data.csv', 'w')
+    rules = decision_tree.getRules()
     
+    rules = sorted(rules, key=operator.itemgetter(-1))
+    for rule in rules:
+        print rule
+    q_val = []
+    for index, rule in enumerate(rules):
+        q_val.append([index, rule[-1]])
+    #print median
+    whitened = whiten(q_val)
+    #print whitened
+    centroids,_ = kmeans(whitened, 3, thresh = 1,iter = 100)
+#    print centroids
+    ids,_= vq(whitened, centroids)
+    print ids
     
         
     

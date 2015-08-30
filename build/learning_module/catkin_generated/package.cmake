@@ -1,0 +1,7 @@
+set(_CATKIN_CURRENT_PACKAGE "learning_module")
+set(learning_module_MAINTAINER "rashmica <rashmica@todo.todo>")
+set(learning_module_DEPRECATED "")
+set(learning_module_VERSION "0.0.0")
+set(learning_module_BUILD_DEPENDS "rospy" "std_msgs" "message_generation")
+set(learning_module_RUN_DEPENDS "rospy" "std_msgs" "message_runtime")
+set(learning_module_BUILDTOOL_DEPENDS "catkin")

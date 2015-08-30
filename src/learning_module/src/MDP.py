@@ -20,6 +20,8 @@ class MDP:
         self.statelist = []
         self.distance_matrix = []
         self.errorstate = None
+    def getLabel(self):
+		return self.label
     def getStateList(self):
         return self.statelist
     def getQMatrix(self):
@@ -30,6 +32,8 @@ class MDP:
         return self.blocks
     def setQMatrix(self, qmat):
         self.qmat = qmat
+    def getErrorState(self):
+        return self.errorstate
     def findNextState(self, currentstate, action):
         newconfig = copy.deepcopy(currentstate.getConfiguration())
         for i in range(0, len(newconfig)):
@@ -97,19 +101,16 @@ class MDP:
                 self.updateProbabilityMatrix(self.probmat[currentstate.getLabel()], self.qmat[currentstate.getLabel()])
                 currentstate = nextstate
         """END"""
-    def onPolicyLearning(self, action_chosen=None):
+    def onPolicyLearning(self, action_chosen):
         """
         If on policy learning is being done then this function must be continuously called.
         If no action is given, then it is a signal that an error has occured and an 
         errorstate is returned.
         """
-        if action_chosen == None:
-            return self.errorstate
-        else:
-            self.qLearning(self.errorstate, action_chosen)
-            self.updateProbabilityMatrix(self.probmat[self.errorstate.getLabel()], self.qmat[self.errorstate.getLabel()])
-            nextstate = self.statelist[action_chosen.getNextStateAddr()]
-            self.errorstate = nextstate
+        self.qLearning(self.errorstate, action_chosen)
+        self.updateProbabilityMatrix(self.probmat[self.errorstate.getLabel()], self.qmat[self.errorstate.getLabel()])
+        nextstate = self.statelist[action_chosen.getNextStateAddr()]
+        self.errorstate = nextstate
             
     def qLearning(self, currentstate, action_chosen):
         gamma = 0.75

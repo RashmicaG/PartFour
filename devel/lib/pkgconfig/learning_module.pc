@@ -1,0 +1,8 @@
+prefix=/home/prashanth/PartFour/devel
+
+Name: learning_module
+Description: Description of learning_module
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/prashanth/PartFour/devel/lib 
+Requires: 
