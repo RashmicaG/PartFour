@@ -1,7 +1,0 @@
-set(_CATKIN_CURRENT_PACKAGE "controller_module")
-set(controller_module_MAINTAINER "rashmica <rashmica@todo.todo>")
-set(controller_module_DEPRECATED "")
-set(controller_module_VERSION "0.0.0")
-set(controller_module_BUILD_DEPENDS "rospy" "std_msgs" "message_generation")
-set(controller_module_RUN_DEPENDS "rospy" "std_msgs" "message_runtime")
-set(controller_module_BUILDTOOL_DEPENDS "catkin")

@@ -1,2 +1,0 @@
-set(asp_module_MESSAGE_FILES "/home/prashanth/PartFour/src/asp_module/msg/Action.msg;/home/prashanth/PartFour/src/asp_module/msg/Observation.msg;/home/prashanth/PartFour/src/asp_module/msg/State.msg;/home/prashanth/PartFour/src/asp_module/msg/Configuration.msg;/home/prashanth/PartFour/src/asp_module/msg/Block.msg")
-set(asp_module_SERVICE_FILES "/home/prashanth/PartFour/src/asp_module/srv/AspAnswer.srv;/home/prashanth/PartFour/src/asp_module/srv/AspAddObservation.srv;/home/prashanth/PartFour/src/asp_module/srv/AspCurrentState.srv")
