@@ -14,6 +14,8 @@ A node contains its own set of information.
 It needs to be seperated 
 """
 from copy import deepcopy
+import random
+import operator
 class Node:
     def __init__(self, attribute, training_set):
         self.attribute = attribute
@@ -55,7 +57,7 @@ class Node:
         self.children_nodes.append(child)
     def getTrainingSet(self):
         return self.training_set
-    def getChildren(self):
+    def getChildNodes(self):
         return self.children_nodes
     
 class Attribute:
@@ -76,74 +78,68 @@ class DecisionTree:
         self.attributes = attributes
         self.training_sample = training_sample
         self.test_sample = test_sample
-        self.bound = float("inf") 
+        self.rules = []
+    def getRules(self):
+        self.createDecisionTree()
+        rules = []
+        for rule in self.rules:
+            average = 0.0
+            for q_val in rule[-1]:
+                average += q_val[-1]
+            average /= len(rule[-1])
+            rules.append([rule[0], average])
+        return rules
+    def findChildrenNode(self, current_node, attributes, subset):
+        child_node = self.findNextBestNode(attributes, subset[1])
+        if child_node != None:        
+            new_rule = current_node.getRules()+[(current_node.getAttribute().getName()+subset[0]+")")]
+            child_node.setRules(new_rule)                
+            position = self.findPositionOfAttribute(attributes, child_node)
+            child_attrs = attributes[:position]+attributes[position+1:]
+            child_node.setChildrenAttributes(child_attrs)
+        else:
+            #print len(attributes)
+            child_node = self.addLeafNode(current_node)
+        return child_node
+    def getBoundNode(self, child_nodes):
+        child_nodes = sorted(child_nodes, key=operator.attrgetter('bound'), reverse = True)
+        return child_nodes[0]
+    def addLeafNode(self, current_node):
+        last_attr = current_node.getTrainingSet()[0][current_node.getAttribute().getIndex()]
+        new_rule = current_node.getRules()+[(current_node.getAttribute().getName()+ last_attr +")")]
+        leaf_node = Node(None, current_node.getTrainingSet())
+        leaf_node.setRules(new_rule)
+        return leaf_node
+    
     def createDecisionTree(self, current_node = None):
-        stack = []
         if current_node == None:
             current_node = self.findNextBestNode(self.attributes, self.training_sample)
-        stack.append(current_node)
-        position = self.findPositionOfAttribute(self.attributes, current_node)
-        other_attr = self.attributes[:position] + self.attributes[position+1:]
-        self.parent_node = current_node
+            position = self.findPositionOfAttribute(self.attributes, current_node)
+            child_attrs = self.attributes[:position]+self.attributes[position+1:]
+            current_node.setChildrenAttributes(child_attrs)
+        if not current_node.getChildrenAttributes():
+            last_val = current_node.getTrainingSet()[0][current_node.getAttribute().getIndex()]
+            new_rule = current_node.getRules()+[(current_node.getAttribute().getName()+last_val+")")]
+            self.rules.append([new_rule, current_node.getTrainingSet()])
+            return
         subsets = self.createSubsets(current_node)
-        subsets = self.prioritizeSubsets(subsets)
-        if len(subsets) > 1:
-            for subset in subsets:
-                child_node = self.findNextBestNode(other_attr, subset[1])
-                if child_node != None:
-                    child_node.setBound(subset[-1])
-                    new_rule = current_node.getRules()+[(current_node.getAttribute().getName()+subset[0]+")")]
-                    child_node.setRules(new_rule)
-                    position = self.findPositionOfAttribute(other_attr, child_node)
-                    child_attrs = other_attr[:position] + other_attr[position+1:]
-                    child_node.setChildrenAttributes(child_attrs)
-                    stack.append(child_node)
-                    current_node.addChildNode(child_node)        
-        
-        current_node.setChildrenAttributes(other_attr)
-        stack.remove(current_node)
-        stack_pointer = len(stack)-1
-        bound = current_node.getBound()
-        while(len(stack)>0):
-            current_node = stack[stack_pointer]            
-            if len(current_node.getChildrenAttributes()) == 0:
-                last_attr = current_node.getTrainingSet()[0][current_node.getAttribute().getIndex()]
-                new_rule = current_node.getRules()+[(current_node.getAttribute().getName()+ last_attr +")")]
-                child_node = Node(None, subsets[-1])
-                current_node.addChildNode(child_node)
-                child_node.setRules(new_rule)
-                print (current_node.getChildren()[-1].getRules(), current_node.getTrainingSet()[0]);
-                stack.remove(current_node)
-                stack_pointer = len(stack)-1            
-            elif stack_pointer < 0:
-                for node in stack:
-                    node.setLeafNode()
-                    print (node.getRules(), node.getTrainingSet()[0])
-                break;
-            elif current_node.getBound() > bound:
-                subsets = self.createSubsets(current_node)
-                subsets = self.prioritizeSubsets(subsets)
-                if len(subsets) > 1:
-                    other_attr = deepcopy(current_node.getChildrenAttributes())
-                    if len(other_attr)>0:
-                        for subset in subsets:
-                            child_node = self.findNextBestNode(other_attr, subset[1])
-                            new_rule = current_node.getRules()+[(current_node.getAttribute().getName()+subset[0]+")")]
-                            if child_node != None:
-                                child_node.setBound(subset[-1])
-                                position = self.findPositionOfAttribute(other_attr, child_node)
-                                child_attrs = other_attr[:position] + other_attr[position+1:]
-                                child_node.setChildrenAttributes(child_attrs)
-                                stack.append(child_node)
-                                current_node.addChildNode(child_node)
-                                child_node.setRules(new_rule)
-
-                stack.remove(current_node)
-                stack_pointer = len(stack) - 1
-            elif current_node.getBound() <= bound:
-                stack_pointer -= 1
-                bound = current_node.getBound()
-        return self.parent_node
+        other_attr = deepcopy(current_node.getChildrenAttributes())
+        for subset in subsets:
+            child_node = self.findChildrenNode(current_node, other_attr, subset)
+            current_node.addChildNode(child_node)
+        child_nodes = deepcopy(current_node.getChildNodes())
+        best_node = self.getBoundNode(child_nodes)
+        self.rules.append([best_node.getRules(),best_node.getTrainingSet()])
+        if best_node != None and len(child_nodes)>1:
+            child_nodes.remove(best_node)
+        for node in child_nodes:
+            self.createDecisionTree(node)
+    def averageQValue(self, trainingSet):
+        qvals = []
+        for t in trainingSet:
+            qvals.append(t[-1])
+        average = sum(qvals)/len(qvals)
+        return average
     
     def findPositionOfAttribute(self, attributes, node):
         i = 0
@@ -157,6 +153,7 @@ class DecisionTree:
     def prioritizeSubsets(self, subsets):
         subsets.sort(key=lambda x: x[2])        
         return subsets
+        
     def getParentNode(self):
         return self.parent_node
                     
@@ -190,24 +187,30 @@ class DecisionTree:
         
     def findNextBestNode(self, attributes, training_sample):
         current_best = None
-        variance_min = float("inf")
+        max_gain = 0.0
         qlist = []
         for sample in training_sample:
-			qlist.append(sample[-1])
+		qlist.append(sample[-1])
         original_var = self.calcVariance(qlist)
         for attr in attributes:
             temp_node = Node(attr, training_sample)
             temp_subsets = self.createSubsets(temp_node)
-            temp_max = 0.0
-            info_gain = 0.0
-            for each in temp_subsets:
-				temp_max += each[-1]
-            info_gain = original_var - temp_max
-            if variance_min > info_gain:
+            if len(attributes) > 1:
+                var_sum = 0.0
+                for each in temp_subsets:
+                    var_sum += each[-1]
+                info_gain = original_var - var_sum
+                if max_gain < info_gain:
+                    current_best = temp_node
+                    max_gain = info_gain
+            else:
                 current_best = temp_node
-                variance_min = info_gain
-        if current_best != None:
-            current_best.setBound(variance_min)
+                max_gain = 0.0
+                break;
+        if current_best == None:
+            rand_attr = random.choice(attributes)
+            current_best = Node(rand_attr, training_sample)
+        current_best.setBound(max_gain)
         return current_best
         """
         for a given set of attributes:

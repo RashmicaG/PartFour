@@ -6,10 +6,11 @@ Created on Fri Jul 17 16:24:02 2015
 """
 
 class Block:
-    def __init__(self, label, shape, colour):
+    def __init__(self, label, shape, colour, size):
         self.label = label
         self.shape = shape
         self.colour = colour
+        self.size = size
         """END"""
     def getLabel(self):
         return self.label
