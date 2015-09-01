@@ -1,2 +1,4 @@
-Action action_chosen
+asp_module/Action action_chosen
 ---
+Int16 got_action
+

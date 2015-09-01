@@ -1,6 +1,4 @@
-State initial_state
+asp_module/State initial_state
 ---
-<<<<<<< HEAD
-int return_message
-=======
->>>>>>> b208ac1a1147af535ba688a9454c2f748a26cb70
+int16 return_message
+

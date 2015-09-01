@@ -1,3 +1,4 @@
-State initial_state
+asp_module/State initial_state
 ---
-int 0
+Int16 return_message
+

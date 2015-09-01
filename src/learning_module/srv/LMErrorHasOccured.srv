@@ -1,6 +1,4 @@
-Action action_chosen
+asp_module/Action action_chosen
 ---
-<<<<<<< HEAD
-int got_action
-=======
->>>>>>> b208ac1a1147af535ba688a9454c2f748a26cb70
+int16 got_action
+
