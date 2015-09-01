@@ -20,19 +20,19 @@ import numpy
 import operator
 from DecisionTree import *
 
-#from asp_module.msg import State as StateMsg
-#from asp_module.msg import Configuration as ConfigMsg
-#from asp_module.msg import Block as BlockMsg
+from asp_module.msg import State as StateMsg
+from asp_module.msg import Configuration as ConfigMsg
+from asp_module.msg import Block as BlockMsg
 class LearningModule:
     def __init__(self):
         self.mdp_list = []
         self.error_config = []
         self.success_config = []
         self.decision_tree = None
-        #src_error = rospy.Service('LMErrorHasOccured',LMErrorHasOccured, self.errorHandle)
-        #src_rules = rospy.Service('LMGenerateRules', LMGenerateRules, self.generateRules)
-        #srv_state = rospy.Service('LMCurrentState', LMCurrentState, self.initialise)
-        #srv_action = rospy.Service('LMStateActionTaken', LMStateActionTaken, self.onPolicyLearning)
+        src_error = rospy.Service('LMErrorHasOccured',LMErrorHasOccured, self.errorHandle)
+        src_rules = rospy.Service('LMGenerateRules', LMGenerateRules, self.generateRules)
+        srv_state = rospy.Service('LMCurrentState', LMCurrentState, self.initialise_mdp)
+        srv_action = rospy.Service('LMStateActionTaken', LMStateActionTaken, self.onPolicyLearning)
 
     def initialise_lists(self):
         self.mdp_list.append([])
@@ -160,9 +160,17 @@ class LearningModule:
         valid_rules = []
         for index in indices:
             valid_rules.append(rules[index][0])
-            print valid_rules[-1]
+        return self.parseRules(valid_rules)
+
     def parseRules(self, rules):
-        pass
+        valid_rules = []
+        for rule in rules:
+            sentence = ""
+            for segment in rule:
+                sentence = sentence + segment + ", "
+            sentence = sentence[:-2]
+            valid_rules.append(sentence)
+        return Rules(generatedRules = valid_rules)
 
     def reduceMDP(self,errorconfig, stack_config, start_config, blocks):
         mdp_list = []

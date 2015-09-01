@@ -71,7 +71,6 @@ class MDP:
         """END"""
     def initMDP(self, initstate):
         self.initStateList(initstate)
-        print len(self.statelist)
         self.errorstate = initstate
         self.qmat = [[0.0 for i in range(0,len(self.statelist))] for i in range(0,len(self.statelist))]
         self.probmat = [[0.0 for i in range(0,len(self.statelist))] for i in range(0,len(self.statelist))]
