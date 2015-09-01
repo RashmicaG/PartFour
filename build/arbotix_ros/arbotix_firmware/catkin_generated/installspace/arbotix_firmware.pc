@@ -1,0 +1,8 @@
+prefix=/home/prashanth/PartFour/install
+
+Name: arbotix_firmware
+Description: Description of arbotix_firmware
+Version: 0.10.0
+Cflags: 
+Libs: -L/home/prashanth/PartFour/install/lib 
+Requires: 

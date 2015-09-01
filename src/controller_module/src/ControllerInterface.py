@@ -4,6 +4,7 @@ import rospy
 from asp_module.srv import *
 from asp_module.msg import *
 from asp_module import *
+from learning_module import *
 from std_msgs.msg import Int16
 from collections import deque
 from controller_module.msg import *
@@ -22,7 +23,7 @@ class Robot:
         self.currentAction = Action('null', 'null', 'null', 0, Configuration([]),  False)
 
         self.block = Block('h1', 'sdf', 'asdfas', 'asdf')
-
+        self.rules = Rules([])
 
 
     def sendGoal(self):
@@ -174,9 +175,23 @@ class Robot:
 
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
-
-
-
+    
+    def sendStateToLearningModule(self):
+		rospy.wait_for_service('LMCurrentState')
+		try:
+			sendState = rospy.ServiceProxy('LMCurrentState', LMCurrentState)
+			success = sendState(self.currentState)
+		except rospy.ServiceException, e:
+			print "Service call failed %e" %e
+	
+	def sendActionToLearningModule(self):
+		rospy.wait_for_service('LMStateActionTaken')
+		try:
+			sendStateAction = rospy.ServiceProxy('LMStateActionTaken', LMStateActionTaken)
+			success = sendState(self.currentAction)
+		except rospy.ServiceException, e:
+			print "Service call failed %e" %e
+	
 
 
 
@@ -225,7 +240,7 @@ class Robot:
         self.sendGoalToAspModule()
 
         # send inital and goal configuraton to LEARNING_MODULE -- ON POLICY
-
+        self.sendStateToLearningModule()
         # now we are ready to execute actions
         self.state = 'execute'
 
@@ -234,14 +249,14 @@ class Robot:
 
         # when no answer set, this breaks. FIX
         # self.sendGoalToAspModule()
-
+        # self.sendActionToLearningModule() -- ONPOLICY LEARNING
 
         self.state = 'feedback'
 
     def feedback(self):
         print 'feedback'
-
-
+        
+        # Confused
         expectedConfig = self.currentAction.parsed.config
         config = expectedConfig
 

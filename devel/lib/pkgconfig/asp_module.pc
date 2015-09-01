@@ -1,0 +1,8 @@
+prefix=/home/prashanth/PartFour/devel
+
+Name: asp_module
+Description: Description of asp_module
+Version: 0.0.0
+Cflags: -I/home/prashanth/PartFour/devel/include
+Libs: -L/home/prashanth/PartFour/devel/lib 
+Requires: rospy std_msgs message_runtime

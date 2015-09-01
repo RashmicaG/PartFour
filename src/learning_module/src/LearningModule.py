@@ -20,19 +20,19 @@ import numpy
 import operator
 from DecisionTree import *
 
-from asp_module.msg import State as StateMsg
-from asp_module.msg import Configuration as ConfigMsg
-from asp_module.msg import Block as BlockMsg
+#from asp_module.msg import State as StateMsg
+#from asp_module.msg import Configuration as ConfigMsg
+#from asp_module.msg import Block as BlockMsg
 class LearningModule:
     def __init__(self):
         self.mdp_list = []
         self.error_config = []
         self.success_config = []
         self.decision_tree = None
-        src_error = rospy.Service('LMErrorHasOccured',LMErrorHasOccured, self.errorHandle)
-        src_rules = rospy.Service('LMGenerateRules', LMGenerateRules, self.generateRules)
-        srv_state = rospy.Service('LMCurrentState', LMCurrentState, self.initialise)
-        srv_action = rospy.Service('LMStateActionTaken', LMStateActionTaken, self.onPolicyLearning)
+        #src_error = rospy.Service('LMErrorHasOccured',LMErrorHasOccured, self.errorHandle)
+        #src_rules = rospy.Service('LMGenerateRules', LMGenerateRules, self.generateRules)
+        #srv_state = rospy.Service('LMCurrentState', LMCurrentState, self.initialise)
+        #srv_action = rospy.Service('LMStateActionTaken', LMStateActionTaken, self.onPolicyLearning)
 
     def initialise_lists(self):
         self.mdp_list.append([])

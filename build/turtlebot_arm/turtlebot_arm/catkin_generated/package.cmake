@@ -1,0 +1,7 @@
+set(_CATKIN_CURRENT_PACKAGE "turtlebot_arm")
+set(turtlebot_arm_MAINTAINER "Jorge Santos <jsantossimon@gmail.com>")
+set(turtlebot_arm_DEPRECATED "")
+set(turtlebot_arm_VERSION "0.3.3")
+set(turtlebot_arm_BUILD_DEPENDS )
+set(turtlebot_arm_RUN_DEPENDS "turtlebot_arm_bringup" "turtlebot_arm_description" "turtlebot_arm_ikfast_plugin" "turtlebot_arm_block_manipulation" "turtlebot_arm_kinect_calibration" "turtlebot_arm_moveit_config" "turtlebot_arm_moveit_demos")
+set(turtlebot_arm_BUILDTOOL_DEPENDS "catkin")

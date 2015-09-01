@@ -76,7 +76,7 @@ class ASPInterface:
             fpath_goal = os.path.join(os.path.dirname(__file__),'goal.sp')
 
             filenames = [fpath_constants, fpath_rules, fpath_initial, fpath_config, fpath_history]
-           
+
             if mode == 'planning':
                 filenames.append(fpath_planner)
                 # if goal != '':
@@ -103,7 +103,7 @@ class ASPInterface:
 
     def addNewBlocks(self, state):
         """ This function discards the previous block
-        configuration and generates the ASP rules for 
+        configuration and generates the ASP rules for
         the given state"""
 
         surface  = 0
@@ -129,14 +129,14 @@ class ASPInterface:
                     outfile.write('holds(on(' + block.label + ', s' + str(config[surface]) + '), 0).\n')
                 surface = surface +1
 
-        # if all is ok 
+        # if all is ok
         return True
 
     def querySurface(self, surface):
-        """ This function takes a surface and returns 
+        """ This function takes a surface and returns
         the object that this surface belongs to"""
         try:
-            print surface            
+            print surface
             pattern = 'has_surface(.*?, ' + surface + ').'
             fpath_initial = os.path.join(os.path.dirname(__file__), 'test.sp')
             for line in open(fpath_initial):
@@ -159,7 +159,7 @@ class ASPInterface:
         for block in goal.goal.config:
 
             print block
-            string +=  ' holds(on(block' + str(index) + ', s' 
+            string +=  ' holds(on(block' + str(index) + ', s'
             if block == -1:
                 string += str(self.tableSurface) + '), I),'
             else:
@@ -200,7 +200,7 @@ class ASPInterface:
                 return AspAnswerResponse(parsed=self.current_plan[self.iterator])
             except IndexError:
                 return AspAnswerResponse(parsed= Action(action = 'null', actionableBlock = 'null', destinationBlock = 'null', timestep=0, config = Configuration([]), goalAchieved = True))
-            
+
 
 
     def parse_answer(self, raw, timestep):
@@ -221,13 +221,13 @@ class ASPInterface:
             for step in anslist:
                 if step:
                     # get action
-                    action = re.findall("\((.*?)\(", step)[0]  
+                    action = re.findall("\((.*?)\(", step)[0]
                     # get the timestep
-                    timestep = re.findall("\)(.*)\)", step) 
-                    # remove the comma from timestep 
-                    timestep = timestep[0].replace(',', '')   
+                    timestep = re.findall("\)(.*)\)", step)
+                    # remove the comma from timestep
+                    timestep = timestep[0].replace(',', '')
                     # remove the outer brackets from statement
-                    temp = re.search("\((.*)\)", step).group(1)  
+                    temp = re.search("\((.*)\)", step).group(1)
                     # remove brackets
                     target = re.findall("\((.*)\),", temp)[0]
                     # put arguments into a list
@@ -241,14 +241,14 @@ class ASPInterface:
                     else:
                         destBlock = 'null'
 
-                     
+
                     # self.AspToConfig(self.getExpectedConfig(timestep))
 
                     parsed.insert(int(timestep),(Action(action = action, actionableBlock = block, destinationBlock = destBlock, timestep=int(timestep), config =self.getExpectedConfig(timestep), goalAchieved = False)))
 
         parsed.sort(key=lambda x: int(x.timestep))
         self.current_plan = parsed
-        return 
+        return
         # except:
             # print 'error occured in parsing'
 
@@ -257,7 +257,7 @@ class ASPInterface:
         """New timestep"""
         print 'A new timestep has just come in!'
         self.timestep = timestep.data
-        print 'timestep is now ' 
+        print 'timestep is now '
         print self.timestep
         return
 
@@ -265,7 +265,7 @@ class ASPInterface:
         """ Add new observation to observation queue """
         self.observations.append(observation)
         self.checkNewObservations()
-        
+
 
     def checkNewObservations(self):
         """ Checks if new observations are valid
@@ -287,7 +287,7 @@ class ASPInterface:
 
         state = []
         fpath_answer = os.path.join(os.path.dirname(__file__),'asp.answer')
-       
+
         # for line in open(fpath_answer):
         anslist = []
         with open(fpath_answer) as infile:
@@ -312,11 +312,11 @@ class ASPInterface:
                     temp[2] = int(temp[2])
                     print temp
                     if 'tab' in temp[1] :
-                        temp[1] = -1 
+                        temp[1] = -1
                     else:
                         temp[1] =  int(re.search('block(.*)', temp[1]).group(1))
                     print temp
-                    # now first element is block id, second element is the block that 
+                    # now first element is block id, second element is the block that
                     # the first block is on, the third element is the timestep
                     matches.append(temp)
 
@@ -356,6 +356,3 @@ if __name__ == "__main__":
     print "Ready to service queries"
 
     rospy.spin()
-    
- 
-
