@@ -18,17 +18,14 @@ class Screen:
         if event.type == pygame.QUIT:
             self.running = False
 
-    def on_render(self, blocks):
-        """
-        Will handle all render changes
-        Colours RobotArm
-        Colours Blocks
-        Colours background
-        Colours frames
-        """
+    def on_render(self, blocks, arm, boundaries): #, rule_box):
         self.disp_surf.fill(self.background)
+        for boundary in boundaries:
+            pygame.draw.line(self.disp_surf, (0,0,0),boundary[0], boundary[1], 4)
         for block in blocks:
             block.renderShape(self.disp_surf)
+        arm.renderShape(self.disp_surf)
+        # rule_box.renderShape(self.disp_surf)
         pygame.display.flip()
 
     def on_cleanup(self):
