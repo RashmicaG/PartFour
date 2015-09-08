@@ -29,7 +29,7 @@ class LearningModule:
         self.error_config = []
         self.success_config = []
         self.decision_tree = None
-        
+
         src_error = rospy.Service('LMErrorHasOccured',LMErrorHasOccured, self.errorHandle)
         src_rules = rospy.Service('LMGenerateRules', LMGenerateRules, self.generateRules)
         srv_state = rospy.Service('LMCurrentState', LMCurrentState, self.initialise_mdp)

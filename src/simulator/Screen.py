@@ -11,7 +11,8 @@ class Screen:
 
     def on_init(self):
         pygame.init()
-        self.disp_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        print pygame.display.get_init()
+        self.disp_surf = pygame.display.set_mode(self.size)
         self.running = True
 
     def on_event(self, event):
