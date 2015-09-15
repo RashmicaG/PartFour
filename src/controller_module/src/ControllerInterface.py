@@ -7,7 +7,8 @@ from asp_module import *
 from learning_module import *
 from std_msgs.msg import Int16
 from collections import deque
-from controller_module.msg import *
+from learning_module.msg import *
+from learning_module.srv import *
 import random
 import types
 
@@ -21,8 +22,17 @@ class Robot:
         self.goalConfig = Configuration([])
         self.currentState = State(Configuration([]), [] )
         self.currentAction = Action('null', 'null', 'null', 0, Configuration([]),  False)
+        self.newSet = False
 
-        self.block = Block('h1', 'sdf', 'asdfas', 'asdf')
+        # self.blocks = [Block('null', 'null', 'null', 'null'), Block('null', 'null', 'null', 'null')]
+                # only for testing purposes
+        self.blocks = [Block('block0', 'cuboid', 'blue', 'small'), 
+                    Block('block1', 'prism', 'red', 'small'), 
+                    Block('block2', 'cube', 'blue', 'small'), 
+                    Block('block3', 'cube', 'red', 'small'),
+                    # Block('block4', 'prism', 'small', 'yellow')
+                    ]
+
         self.rules = Rules([])
 
 
@@ -79,24 +89,16 @@ class Robot:
 
             while( block_is_on_this_block or block_is_this_block or block_used ):
                 # find new value
-                print 'index ' + str(index)
                 is_on = random.randrange(-1, size)
                 block_is_this_block = (is_on == index)
-                print is_on
                 if is_on != -1:
                     block_used = (is_on in config)
                     block_is_on_this_block = (config[is_on] == index)
                 else:
                     block_used = False
                     block_is_on_this_block = False
-                
-                print block_is_this_block
-                print block_is_on_this_block
-                print block_used
 
             config[index] = is_on
-        print config
-        print "loop detection"
         # detect any loops
         array = [0]*(size+1)
         index = 0
@@ -105,7 +107,6 @@ class Robot:
             other = index
             array = [0]*(size+1)
             while( True ):
-                print array
                 if ( config[other] == -1):
                     break;
 
@@ -122,26 +123,12 @@ class Robot:
         if -1 not in config:
             config[random.randrange(-1, size)] = -1
 
-        print config
- 
-        # only for testing purposes
-        blocks = [Block('block0', 'cuboid', 'small', 'blue'), 
-                    Block('block1', 'prism', 'small', 'red'), 
-                    Block('block2', 'cube', 'small', 'blue'), 
-                    Block('block3', 'cube', 'small', 'red'),
-                    # Block('block4', 'prism', 'small', 'yellow')
-                    ]
-
-        # print blocks
-
         if test == 'goal':
             print "generating a goal config"
             self.goalConfig = Configuration(config)
         else:
             print "generating an initial config"
-            self.currentState = State(Configuration(config), blocks )
-
-       
+            self.currentState = State(Configuration(config), self.blocks )
 
 
 
@@ -151,10 +138,8 @@ class Robot:
         rospy.wait_for_service('AspAnswer')
         try:
             asp_answer = rospy.ServiceProxy('AspAnswer', AspAnswer)
-            print self.goalConfig
-            self.currentAction = asp_answer(self.goalConfig)
-
-            print self.currentAction
+            ans = asp_answer(self.goalConfig).parsed
+            self.currentAction = Action(ans.action, ans.actionableBlock, ans.destinationBlock, ans.timestep, ans.config, ans.goalAchieved)
 
             self.goalActive = True
             # return ans_response
@@ -177,21 +162,42 @@ class Robot:
             print "Service call failed: %s" % e
     
     def sendStateToLearningModule(self):
-		rospy.wait_for_service('LMCurrentState')
-		try:
-			sendState = rospy.ServiceProxy('LMCurrentState', LMCurrentState)
-			success = sendState(self.currentState)
-		except rospy.ServiceException, e:
-			print "Service call failed %e" %e
+        rospy.wait_for_service('LMInitialise')
+        try:
+            sendState = rospy.ServiceProxy('LMInitialise', LMInitialise)
+            success = sendState(self.currentState)
+        except rospy.ServiceException, e:
+			print "Service call failed %s" % e
 	
-	def sendActionToLearningModule(self):
-		rospy.wait_for_service('LMStateActionTaken')
-		try:
-			sendStateAction = rospy.ServiceProxy('LMStateActionTaken', LMStateActionTaken)
-			success = sendState(self.currentAction)
-		except rospy.ServiceException, e:
-			print "Service call failed %e" %e
-	
+    def sendActionToLearningModule(self, error):
+        if error is False:
+            rospy.wait_for_service('LMStateActionTaken')
+            try:
+                if self.currentAction.action == "put_down":
+                    sendStateAction = rospy.ServiceProxy('LMStateActionTaken', LMStateActionTaken)
+                    sucess = sendStateAction(self.currentAction)
+            except rospy.ServiceException, e:
+                print "Service call failed %s" % e
+
+        else:   
+            rospy.wait_for_service('LMErrorHasOccured')
+            try:
+                if self.currentAction.action == "put_down":
+                    sendStateAction = rospy.ServiceProxy('LMErrorHasOccured', LMErrorHasOccured)
+                    sucess = sendStateAction(self.currentAction) 
+            except rospy.ServiceException, e:
+                print "Service call failed %s" % e
+
+
+    def sendNewBlockSetToLearningModule(self):
+        rospy.wait_for_service('LMNewBlocks')
+        try:
+            print "sending new blocks"
+            sendState = rospy.ServiceProxy('LMNewBlocks', LMNewBlocks)
+            success = sendState(self.blocks)
+        except rospy.ServiceException, e:
+            print "Service call failed %s" % e
+        
 
 
 
@@ -213,6 +219,23 @@ class Robot:
         pass
 
 
+    def simulateError(self, expectedConfig):
+        """if the expected configuration involved
+        putting a block on a prism shaped block
+        then report an error. Else report success"""
+
+        print "simulation"
+        for block in self.blocks:
+
+            if block.label == self.currentAction.destinationBlock:
+                print block.shape 
+                if block.shape == 'prism':
+                    return None
+
+        return expectedConfig
+    
+
+
 ########################################################################
 #               Main state functions
 
@@ -229,6 +252,17 @@ class Robot:
         while( self.goalConfig  == self.currentState.configuration):
             self.generateBlockConfig('goal')
 
+        print self.currentState.configuration
+
+        rand = random.randrange(0,3)
+        print rand
+       
+        # set up Learning Module
+        if self.newSet is True and rand <1:
+            self.sendNewBlockSetToLearningModule()
+
+        self.sendStateToLearningModule()
+
         # Now we are ready to plan
         self.state = 'plan'
 
@@ -239,8 +273,7 @@ class Robot:
         self.sendStateToAspModule()
         self.sendGoalToAspModule()
 
-        # send inital and goal configuraton to LEARNING_MODULE -- ON POLICY
-        self.sendStateToLearningModule()
+
         # now we are ready to execute actions
         self.state = 'execute'
 
@@ -248,34 +281,37 @@ class Robot:
         print 'execute'
 
         # when no answer set, this breaks. FIX
-        # self.sendGoalToAspModule()
-        # self.sendActionToLearningModule() -- ONPOLICY LEARNING
-
+        # self.sendGoalToRobotModule()
+       
         self.state = 'feedback'
 
     def feedback(self):
         print 'feedback'
         
-        # Confused
-        expectedConfig = self.currentAction.parsed.config
-        config = expectedConfig
+        expectedConfig = self.currentAction.config
 
-        print expectedConfig   
+        # config = self.getConfigBlocks() -- what we would do with real robot
+        config = self.simulateError(expectedConfig)
+        
+        print expectedConfig 
+        print self.currentAction
 
         if config != expectedConfig:
             print 'FAILURE'
-            self.state = 'learning'
+            self.sendActionToLearningModule(True)
+            self.state = 'initial'
         elif config == self.goalConfig:
-            print 'GOAL"'
-            self.state = 'learning'
+            print 'GOAL'
+            self.sendActionToLearningModule(False)
+            self.state = 'initial'
         else:
             print 'on the way to our goooooal'
+            self.sendActionToLearningModule(False)
             self.state = 'plan'
 
     def learning(self):
         print 'learning'
 
-        # send inital and goal configuraton to LEARNING_MODULE -- OFFPOLICY
 
 
         self.state = 'initial'
@@ -295,9 +331,20 @@ if __name__ == '__main__':
 
     car = 0
 
-    while(r.state != 'learning'):
+    while(car < 60):
         # pass
         states[r.state]()
+        car +=1
+
+    rospy.wait_for_service('LMGenerateRules')
+    try:
+            getRules = rospy.ServiceProxy('LMGenerateRules', LMGenerateRules)
+            rules = getRules() 
+            print rules
+    except rospy.ServiceException, e:
+        print "Service call failed %s" % e
+    
+  
         
 
     

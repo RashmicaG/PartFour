@@ -17,7 +17,7 @@ class State:
         self.dist = 0.0
         """END"""
     def createStateActions(self):
-        self.actionable_blocks = copy.deepcopy(self.configuration)        
+        self.actionable_blocks = list(self.configuration)        
         non_actionable_blocks = [] 
         actions = []
         # Find the address of all actionable blocks

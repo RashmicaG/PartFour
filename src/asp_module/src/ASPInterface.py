@@ -136,7 +136,6 @@ class ASPInterface:
         """ This function takes a surface and returns
         the object that this surface belongs to"""
         try:
-            print surface
             pattern = 'has_surface(.*?, ' + surface + ').'
             fpath_initial = os.path.join(os.path.dirname(__file__), 'test.sp')
             for line in open(fpath_initial):
@@ -151,7 +150,6 @@ class ASPInterface:
     def answerHandler(self, goal=''):
         """ Function called when a node calls AspAnswer service.
         Attempts to generate a plan for the goal that is given."""
-        print goal.goal.config
 
         string =  'goal(I) :- '
         index = 0
@@ -175,7 +173,8 @@ class ASPInterface:
                 self.goal = string
                 self.iterator = 0
                 timestep = self.timestep
-                max_timestep = 17
+                max_timestep = 17  
+                #TODO make this dependant on the num of blocks
 
                 while(timestep <max_timestep):
                      #  Solve and read
@@ -183,13 +182,9 @@ class ASPInterface:
                     with open(fpath_answer, 'r') as infile:
                         raw = infile.read()
                         self.parse_answer(raw, timestep)
-                        print 'plan'
-                        print self.current_plan
                     if not self.current_plan:
                         timestep += 1
                     else:
-                        print'debug'
-                        print self.current_plan[self.iterator]
                         return AspAnswerResponse(parsed=self.current_plan[self.iterator])
             except:
                 print "An error occured in answerHandler"

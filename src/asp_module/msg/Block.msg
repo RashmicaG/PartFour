@@ -1,4 +1,4 @@
 string label
 string shape
-string size
 string colour
+string size

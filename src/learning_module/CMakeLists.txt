@@ -55,8 +55,9 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    LMErrorHasOccured.srv
    LMGenerateRules.srv
-   LMCurrentState.srv
+   LMInitialise.srv
    LMStateActionTaken.srv
+   LMNewBlocks.srv
  )
 
 ## Generate actions in the 'action' folder

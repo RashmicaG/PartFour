@@ -312,8 +312,6 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 
 
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Executability constraints
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -352,4 +350,8 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 
 %robot cannot pick up an object if there is something on top of it
 -occurs(pick_up(R,O1), I) :-  holds(on(O2, S1), I), has_surface(O1, S1).
+
+%robot cannot put down an object onto O2 if there is something already on O2
+-occurs(put_down(R, O1, S2), I) :- has_surface(O2, S2), holds(on(O3, S2), I), O1!=O2, O2!=O3, O3!=O1,
+                                  #blocks(O1), #blocks(O2), #blocks(O3).
 

@@ -11,7 +11,7 @@
 
 #const numSurfaces = 4.
 #const numBlocks = 3. 
-#const numSteps = 12.
+#const numSteps = 10.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  sorts
@@ -326,8 +326,6 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 
 
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Executability constraints
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -367,6 +365,10 @@ holds(is_above(O1,O3), I) :-  holds(is_above(O1, O2), I),
 %robot cannot pick up an object if there is something on top of it
 -occurs(pick_up(R,O1), I) :-  holds(on(O2, S1), I), has_surface(O1, S1).
 
+%robot cannot put down an object onto O2 if there is something already on O2
+-occurs(put_down(R, O1, S2), I) :- has_surface(O2, S2), holds(on(O3, S2), I), O1!=O2, O2!=O3, O3!=O1,
+                                  #blocks(O1), #blocks(O2), #blocks(O3).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Environment setup
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -400,17 +402,17 @@ has_size(block1, small).
 has_colour(block1, red).
 has_shape(block1, prism).
 has_surface(block1, s1).
-holds(on(block1, s3), 0).
+holds(on(block1, s4), 0).
 has_size(block2, small).
 has_colour(block2, blue).
 has_shape(block2, cube).
 has_surface(block2, s2).
-holds(on(block2, s0), 0).
+holds(on(block2, s3), 0).
 has_size(block3, small).
 has_colour(block3, red).
 has_shape(block3, cube).
 has_surface(block3, s3).
-holds(on(block3, s2), 0).
+holds(on(block3, s1), 0).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Planning Module
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -433,4 +435,4 @@ occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
 :- #step(I),
    not something_happened(I),
    something_happened(I+1).
-goal(I) :-  holds(on(block0, s3), I), holds(on(block1, s0), I), holds(on(block2, s1), I), holds(on(block3, s4), I).
+goal(I) :-  holds(on(block0, s3), I), holds(on(block1, s2), I), holds(on(block2, s0), I), holds(on(block3, s4), I).

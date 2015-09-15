@@ -20,6 +20,7 @@ class MDP:
         self.statelist = []
         self.distance_matrix = []
         self.errorstate = None
+        print "mdpppp"
     def getLabel(self):
 		return self.label
     def getStateList(self):
@@ -35,7 +36,7 @@ class MDP:
     def getErrorState(self):
         return self.errorstate
     def findNextState(self, currentstate, action):
-        newconfig = copy.deepcopy(currentstate.getConfiguration())
+        newconfig = list(currentstate.getConfiguration())
         for i in range(0, len(newconfig)):
             if i == action.getActionableBlock():
                 if action.getDestinationBlock() == None:
@@ -86,6 +87,7 @@ class MDP:
     def simulation(self, errorstate, stackstate):
         #self.rewardmat[errorstate.getLabel()][error_action_chosen.getNextStateAddr()] = 5
         #self.reward_matrix = reward_matrix
+        print "Simulating"
         for state in stackstate:
             self.rewardmat[state.getLabel()] = -2.2
         self.rewardmat[errorstate.getLabel()] = 6.75
@@ -100,17 +102,24 @@ class MDP:
                 self.qLearning(currentstate,  action_chosen)
                 self.updateProbabilityMatrix(self.probmat[currentstate.getLabel()], self.qmat[currentstate.getLabel()])
                 currentstate = nextstate
+        print "end of simulation"
         """END"""
+
     def onPolicyLearning(self, action_chosen):
         """
         If on policy learning is being done then this function must be continuously called.
         If no action is given, then it is a signal that an error has occured and an
         errorstate is returned.
         """
+
+        print "action"
+        print action_chosen
         self.qLearning(self.errorstate, action_chosen)
         self.updateProbabilityMatrix(self.probmat[self.errorstate.getLabel()], self.qmat[self.errorstate.getLabel()])
         nextstate = self.statelist[action_chosen.getNextStateAddr()]
         self.errorstate = nextstate
+        print "configuration -- on policy "
+        print self.errorstate.configuration
 
     def qLearning(self, currentstate, action_chosen):
         gamma = 0.75

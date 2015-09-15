@@ -102,8 +102,10 @@ class DecisionTree:
             child_node = self.addLeafNode(current_node)
         return child_node
     def getBoundNode(self, child_nodes):
+        print child_nodes
         child_nodes = sorted(child_nodes, key=operator.attrgetter('bound'), reverse = True)
         return child_nodes[0]
+
     def addLeafNode(self, current_node):
         last_attr = current_node.getTrainingSet()[0][current_node.getAttribute().getIndex()]
         new_rule = current_node.getRules()+[(current_node.getAttribute().getName()+ last_attr +")")]
@@ -124,6 +126,7 @@ class DecisionTree:
             return
         subsets = self.createSubsets(current_node)
         other_attr = deepcopy(current_node.getChildrenAttributes())
+        print len(other_attr)
         for subset in subsets:
             child_node = self.findChildrenNode(current_node, other_attr, subset)
             current_node.addChildNode(child_node)
@@ -134,6 +137,7 @@ class DecisionTree:
             child_nodes.remove(best_node)
         for node in child_nodes:
             self.createDecisionTree(node)
+
     def averageQValue(self, trainingSet):
         qvals = []
         for t in trainingSet:
@@ -158,11 +162,14 @@ class DecisionTree:
         return self.parent_node
                     
     def calcVariance(self, qlist):
-        average = float(sum(qlist))/float(len(qlist))
-        variance = 0.0
-        for qval in qlist:
-            variance += (average - qval)**2
-        return variance
+        if len(qlist) != 0:
+            average = float(sum(qlist))/float(len(qlist))
+            variance = 0.0
+            for qval in qlist:
+                variance += (average - qval)**2
+            return variance
+        else:
+            return None
             
     def createSubsets(self, current_node):
         temp_subsets = []
@@ -171,7 +178,8 @@ class DecisionTree:
             temp_subsets.append([value, [], 0.0])
         for example in current_node.getTrainingSet():
             for value in temp_subsets:
-                if len(example) > 3:
+                if len(example) > 4:
+                    # print example
                     if example[current_node.getAttribute().getIndex()] == value[0]:
                         value[1].append(example)
         for value in temp_subsets:
@@ -212,11 +220,4 @@ class DecisionTree:
             current_best = Node(rand_attr, training_sample)
         current_best.setBound(max_gain)
         return current_best
-        """
-        for a given set of attributes:
-            i will create subsets
-            check the max variance of each subset
-            choose the attribute which gives min variance
-            return the node
-        
-        """
+
