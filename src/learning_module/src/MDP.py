@@ -61,6 +61,7 @@ class MDP:
             self.statelist.append(newstate)
             return newstate
         """END"""
+
     def initStateList(self, currentstate):
         if not currentstate.getActions():
             currentstate.createStateActions()
@@ -70,6 +71,7 @@ class MDP:
                 self.initStateList(nextstate)
         return
         """END"""
+
     def initMDP(self, initstate):
         self.initStateList(initstate)
         self.errorstate = initstate
@@ -84,13 +86,15 @@ class MDP:
                 self.distance_matrix[state.getLabel()][action.getNextStateAddr()] = 1
         self.rewardmat = [-0.25 for i in range(0,len(self.statelist))]
         """END"""
+
     def simulation(self, errorstate, stackstate):
         #self.rewardmat[errorstate.getLabel()][error_action_chosen.getNextStateAddr()] = 5
         #self.reward_matrix = reward_matrix
         print "Simulating"
         for state in stackstate:
             self.rewardmat[state.getLabel()] = -2.2
-        self.rewardmat[errorstate.getLabel()] = 6.75
+            print "stack state"
+        self.rewardmat[errorstate.getLabel()] = 10
         for i in range(0,2000):
             currentstate = r.choice(self.statelist)
             for state in self.statelist:
@@ -111,15 +115,12 @@ class MDP:
         If no action is given, then it is a signal that an error has occured and an
         errorstate is returned.
         """
-
-        print "action"
-        print action_chosen
+        print "on policy"
         self.qLearning(self.errorstate, action_chosen)
         self.updateProbabilityMatrix(self.probmat[self.errorstate.getLabel()], self.qmat[self.errorstate.getLabel()])
         nextstate = self.statelist[action_chosen.getNextStateAddr()]
         self.errorstate = nextstate
-        print "configuration -- on policy "
-        print self.errorstate.configuration
+        """END"""
 
     def qLearning(self, currentstate, action_chosen):
         gamma = 0.75
@@ -133,6 +134,7 @@ class MDP:
             action_chosen.setVisited(True)
         self.qmat[currentstate.getLabel()][action_chosen.getNextStateAddr()] = current_qval
         """END"""
+
     def updateProbabilityMatrix(self, probmat, qmat):
         sum_val = 0.0
         Temperature = 0.85
@@ -145,6 +147,7 @@ class MDP:
                 prob /= sum_val
                 probmat[i] = prob
         """END"""
+
     def updateDistanceMatrix(self, errorstate):
         for state in self.statelist:
             for action in state.getActions():

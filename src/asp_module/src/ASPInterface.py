@@ -155,15 +155,12 @@ class ASPInterface:
         index = 0
 
         for block in goal.goal.config:
-
-            print block
             string +=  ' holds(on(block' + str(index) + ', s'
             if block == -1:
                 string += str(self.tableSurface) + '), I),'
             else:
                 string += str(block) + '), I),'
             index += 1
-
         string = string[:-1] + '.'
 
 
@@ -192,7 +189,9 @@ class ASPInterface:
             try:
                 print 'same goal!'
                 self.iterator += 1
-                return AspAnswerResponse(parsed=self.current_plan[self.iterator])
+                action = self.current_plan[self.iterator]
+                print action
+                return AspAnswerResponse(parsed= action)
             except IndexError:
                 return AspAnswerResponse(parsed= Action(action = 'null', actionableBlock = 'null', destinationBlock = 'null', timestep=0, config = Configuration([]), goalAchieved = True))
 
@@ -291,11 +290,11 @@ class ASPInterface:
             # remove spaces between steps
             anslist = raw.split(' ')
             pattern = 'holds\(on\(block.*?,s.*?\),'+ str(int(timestep) +1) + '\)'
-            print 'match'
+            # print 'match'
             matches=[]
             for thing in anslist:
                 for match in re.findall(pattern, thing):
-                    print match
+                    # print match
                     temp = re.findall("\((.*)\)", match)
                     temp = temp[0].split(',')
                     # isolate block id
@@ -305,18 +304,18 @@ class ASPInterface:
                     # replace with actual block or table
                     temp[1] = self.querySurface(temp[1])
                     temp[2] = int(temp[2])
-                    print temp
+                    # print temp
                     if 'tab' in temp[1] :
                         temp[1] = -1
                     else:
                         temp[1] =  int(re.search('block(.*)', temp[1]).group(1))
-                    print temp
+                    # print temp
                     # now first element is block id, second element is the block that
                     # the first block is on, the third element is the timestep
                     matches.append(temp)
 
         matches.sort(key=lambda x: int(x[0]))
-        print matches
+        # print matches
         block_id = 0
         temp = []
         for block in matches:
@@ -329,7 +328,7 @@ class ASPInterface:
 
         if (-2 not in temp) and (self.tableSurface>len(temp)):
             temp.append(-2)
-        print temp
+        # print temp
 
         return Configuration(temp)
 

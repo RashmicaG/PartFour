@@ -22,14 +22,14 @@ class Robot:
         self.goalConfig = Configuration([])
         self.currentState = State(Configuration([]), [] )
         self.currentAction = Action('null', 'null', 'null', 0, Configuration([]),  False)
-        self.newSet = False
+        self.newSet = True
 
         # self.blocks = [Block('null', 'null', 'null', 'null'), Block('null', 'null', 'null', 'null')]
                 # only for testing purposes
         self.blocks = [Block('block0', 'cuboid', 'blue', 'small'), 
                     Block('block1', 'prism', 'red', 'small'), 
                     Block('block2', 'cube', 'blue', 'small'), 
-                    Block('block3', 'cube', 'red', 'small'),
+                    # Block('block3', 'cube', 'red', 'small'),
                     # Block('block4', 'prism', 'small', 'yellow')
                     ]
 
@@ -50,7 +50,7 @@ class Robot:
 
 
 
-    def generateBlockConfig(self, test, max = 5, min = 4 ):
+    def generateBlockConfig(self, test, max = 4, min = 3):
         """ A configuration of blocks is represented as 
         a list. Each index represents a block, and the value 
         at this index represents what this block is on:
@@ -59,9 +59,9 @@ class Robot:
 
         # check values of max and min
         if not (type(min) == types.IntType and type(max) == types.IntType):
-            print "Max or Min is not an int. Using default of 3 or 4 blocks"
+            print "Max or Min is not an int. Using default of 3 blocks"
             min = 3
-            max = 5
+            max = 4
 
         if min < 0:
             print 'min must be larger than zero. Setting to 0.'
@@ -75,7 +75,6 @@ class Robot:
             print 'max must be BIGGER than min. Increasing max.'
             max = min + 1
 
-        # make sure a block cannot be on itself
         size = random.randrange(min, max)
         config = [-1]* size
 
@@ -123,8 +122,11 @@ class Robot:
         if -1 not in config:
             config[random.randrange(-1, size)] = -1
 
+        config = tuple(config)
+
         if test == 'goal':
             print "generating a goal config"
+            print config
             self.goalConfig = Configuration(config)
         else:
             print "generating an initial config"
@@ -153,13 +155,13 @@ class Robot:
 
         # Check validity of destination
         rospy.wait_for_service('AspCurrentState')
-        try:
-            sendState = rospy.ServiceProxy('AspCurrentState', AspCurrentState)
-            success = sendState(self.currentState)
+        # try:
+        sendState = rospy.ServiceProxy('AspCurrentState', AspCurrentState)
+        success = sendState(self.currentState)
 
 
-        except rospy.ServiceException, e:
-            print "Service call failed: %s" % e
+        # except rospy.ServiceException, e:
+        #     print "Service call failed: %s" % e
     
     def sendStateToLearningModule(self):
         rospy.wait_for_service('LMInitialise')
@@ -188,7 +190,6 @@ class Robot:
             except rospy.ServiceException, e:
                 print "Service call failed %s" % e
 
-
     def sendNewBlockSetToLearningModule(self):
         rospy.wait_for_service('LMNewBlocks')
         try:
@@ -198,9 +199,6 @@ class Robot:
         except rospy.ServiceException, e:
             print "Service call failed %s" % e
         
-
-
-
     def publisher(self, pub, msg):
         try:
             pub.publish(msg)
@@ -209,7 +207,6 @@ class Robot:
 
         return
             
-
     def executeAction(self, action):
         """ This will send action to robot module and return feedback"""
         pass
@@ -218,17 +215,16 @@ class Robot:
         """ Gets configuration of blocks from robot"""
         pass
 
-
     def simulateError(self, expectedConfig):
         """if the expected configuration involved
         putting a block on a prism shaped block
         then report an error. Else report success"""
 
-        print "simulation"
+        # print "simulation"
         for block in self.blocks:
 
             if block.label == self.currentAction.destinationBlock:
-                print block.shape 
+                # print block.shape 
                 if block.shape == 'prism':
                     return None
 
@@ -240,22 +236,30 @@ class Robot:
 #               Main state functions
 
     def initial(self):
-        print "initial"
+        # print "initial"
         
 
         # CHECK IF NEW CONFIGURATION OF BLOCKS HAS ARRIVED
         # TO DO
-        self.generateBlockConfig('hi')
+
+        if (self.newSet is True):
+            self.generateBlockConfig('hi')
+            self.newSet = False
+        
+        print "inital config"
+        print self.currentState.configuration.config
         self.goalConfig  = self.currentState.configuration
 
-        # generate goal configuration and make sure it is different from initial
-        while( self.goalConfig  == self.currentState.configuration):
-            self.generateBlockConfig('goal')
 
-        print self.currentState.configuration
+
+        # generate goal configuration and make sure it is different from initial
+        while( self.goalConfig.config  == self.currentState.configuration.config):
+            self.generateBlockConfig('goal')
+        print self.goalConfig.config
+
+        # print self.currentState.configuration
 
         rand = random.randrange(0,3)
-        print rand
        
         # set up Learning Module
         if self.newSet is True and rand <1:
@@ -267,7 +271,7 @@ class Robot:
         self.state = 'plan'
 
     def plan(self):
-        print 'plan'
+        # print 'plan'
 
         # send inital and goal configuraton to ASP_MODULE
         self.sendStateToAspModule()
@@ -278,39 +282,45 @@ class Robot:
         self.state = 'execute'
 
     def execute(self):
-        print 'execute'
+        # print 'execute'
 
         # when no answer set, this breaks. FIX
         # self.sendGoalToRobotModule()
-       
+        print self.currentAction
         self.state = 'feedback'
 
     def feedback(self):
-        print 'feedback'
+        # print 'feedback'
         
         expectedConfig = self.currentAction.config
 
         # config = self.getConfigBlocks() -- what we would do with real robot
         config = self.simulateError(expectedConfig)
-        
-        print expectedConfig 
-        print self.currentAction
 
+        # print self.currentState
+        # print expectedConfig
+        # config = self.currentState.configuration
+
+  
         if config != expectedConfig:
             print 'FAILURE'
             self.sendActionToLearningModule(True)
+            self.currentState.configuration = expectedConfig
+            # self.currentState.configuration = config  -- when we actually get proper feedbacko
             self.state = 'initial'
         elif config == self.goalConfig:
             print 'GOAL'
             self.sendActionToLearningModule(False)
+            self.currentState.configuration = config
             self.state = 'initial'
         else:
             print 'on the way to our goooooal'
             self.sendActionToLearningModule(False)
+            self.currentState.configuration = config
             self.state = 'plan'
 
     def learning(self):
-        print 'learning'
+        # print 'learning'
 
 
 
@@ -331,7 +341,7 @@ if __name__ == '__main__':
 
     car = 0
 
-    while(car < 60):
+    while(car < 1000):
         # pass
         states[r.state]()
         car +=1

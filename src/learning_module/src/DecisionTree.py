@@ -79,6 +79,7 @@ class DecisionTree:
         self.training_sample = training_sample
         self.test_sample = test_sample
         self.rules = []
+
     def getRules(self):
         self.createDecisionTree()
         rules = []
@@ -89,6 +90,7 @@ class DecisionTree:
             average /= len(rule[-1])
             rules.append([rule[0], average])
         return rules
+
     def findChildrenNode(self, current_node, attributes, subset):
         child_node = self.findNextBestNode(attributes, subset[1])
         if child_node != None:        
@@ -101,6 +103,7 @@ class DecisionTree:
             #print len(attributes)
             child_node = self.addLeafNode(current_node)
         return child_node
+        
     def getBoundNode(self, child_nodes):
         print child_nodes
         child_nodes = sorted(child_nodes, key=operator.attrgetter('bound'), reverse = True)
@@ -114,6 +117,7 @@ class DecisionTree:
         return leaf_node
     
     def createDecisionTree(self, current_node = None):
+
         if current_node == None:
             current_node = self.findNextBestNode(self.attributes, self.training_sample)
             position = self.findPositionOfAttribute(self.attributes, current_node)
@@ -123,10 +127,9 @@ class DecisionTree:
             last_val = current_node.getTrainingSet()[0][current_node.getAttribute().getIndex()]
             new_rule = current_node.getRules()+[(current_node.getAttribute().getName()+last_val+")")]
             self.rules.append([new_rule, current_node.getTrainingSet()])
-            return
+            return self.rules
         subsets = self.createSubsets(current_node)
         other_attr = deepcopy(current_node.getChildrenAttributes())
-        print len(other_attr)
         for subset in subsets:
             child_node = self.findChildrenNode(current_node, other_attr, subset)
             current_node.addChildNode(child_node)
@@ -137,6 +140,8 @@ class DecisionTree:
             child_nodes.remove(best_node)
         for node in child_nodes:
             self.createDecisionTree(node)
+        return self.rules
+
 
     def averageQValue(self, trainingSet):
         qvals = []
