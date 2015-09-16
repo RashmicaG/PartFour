@@ -144,8 +144,7 @@ class LearningModule:
     def onPolicyLearning(self, action):
         # try:
         """ This will be the callback function"""
-        print action.action_chosen
-        #action_chosen = getFromMessag
+   
         actionableBlock = int(re.findall('\d+$',action.action_chosen.actionableBlock)[0])
         if(re.findall('tab',action.action_chosen.destinationBlock)):
             destinationBlock = None
@@ -154,18 +153,7 @@ class LearningModule:
 
         action_chosen = None
 
-        print actionableBlock
-        print destinationBlock
-
-        print self.mdp_list
-        print self.mdp_list[-1]
-        print self.mdp_list[-1][-1]
-        print self.mdp_list[-1][-1].errorstate
-        print self.mdp_list[-1][-1].errorstate.actions
-
         for action in self.mdp_list[-1][-1].errorstate.actions:
-            print action.actionableBlock
-            print action.destinationBlock
             if(actionableBlock == action.actionableBlock) and (destinationBlock == action.destinationBlock):
                 action_chosen = action
 
@@ -203,8 +191,6 @@ class LearningModule:
     
         reduced_mdp_list = []
         attributes = []
-        # reduced_mdp = self.combineIdenticalMDPs(self.mdp_list[-1])
-        # self.writeToList(reduced_mdp)
         self.mdp_list[-1] = [self.combineIdenticalMDPs(self.mdp_list[-1])]
         self.writeToList(self.mdp_list[-1][-1])
 
@@ -231,8 +217,6 @@ class LearningModule:
             for data in rule[-1]:
                 average += data[-1]
             average = average/len(rule[-1])
-            print rule[0]
-            print (rule[0], average)
             list_.append((rule[0], average))
 
 
@@ -249,7 +233,6 @@ class LearningModule:
         for index, rule in enumerate(rules):
             q_val.append([index, rule[-1]])
 
-        print q_val
         whitened = whiten(q_val)
         centroids,_ = kmeans(whitened, 3, thresh = 1,iter = 100)
         ids,_= vq(whitened, centroids)
@@ -299,3 +282,4 @@ if __name__ == '__main__':
 
     print "Ready to learn!"
     rospy.spin()
+
