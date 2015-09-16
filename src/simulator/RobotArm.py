@@ -16,6 +16,7 @@ class RobotArm:
         (lpx, lpy, lpw, lph), (rpx, rpy, rpw, rph) = self.pincher_positions
         self.lp_rect = pygame.Rect(lpx, lpy, lpw, lph)
         self.rp_rect = pygame.Rect(rpx, rpy, rpw, rph)
+        self.grabbing = False
 
     def getDirection(self, position):
         if self.base_position[0] == position[0] and self.base_position[1] == position[1]:
@@ -25,6 +26,7 @@ class RobotArm:
             self.direction.append(position[1] - self.direction[0]*position[0])
 
     def move(self, direction):
+
         if direction == "Right":
             self.base_position[0] += 1
         elif direction == "Left":
@@ -42,7 +44,7 @@ class RobotArm:
     def grab(self, direction):
         if self.pincher_seperation <=  self.base_width-self.pincher_width:
             if self.pincher_seperation >= self.pincher_width:
-                if direction == "Close":
+                if direction == "Close" and self.grabbing == False:
                     self.pincher_seperation -= 1
                 elif direction == "Open":
                     self.pincher_seperation += 1

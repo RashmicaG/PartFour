@@ -9,19 +9,19 @@ class Block:
         self.boundaries = boundaries
         self.rect = pygame.Rect(position[0], position[1], self.shape.width, self.shape.height)
         self.direction = []
+        self.grabbed = False
+        self.grabdist = 10
+    def getIsGrabbed(self):
+        return self.grabbed
+
+    def setGrabbed(self, grabbed):
+        self.grabbed = grabbed
 
     def getShape(self):
         return self.shape
 
     def getPosition(self):
         return self.position
-
-    def getDirection(self, position):
-        if self.position == position:
-            self.direction = []
-        else:
-            self.direction.append((position[1] - self.position[1])/(position[0] - self.position[0]))
-            self.direction.append(position[1] - self.direction[0]*position[0])
 
     def move(self, direction):
         if direction == "Right":
@@ -33,7 +33,7 @@ class Block:
         elif direction == "Down":
             self.position[1] += 1
         self.rect = pygame.Rect(self.position[0], self.position[1], self.shape.width, self.shape.height)
-        
+
     def renderShape(self, surface):
         if self.shape.shape == "Prism":
             node_1 = self.position[0], self.position[1] + self.shape.height
