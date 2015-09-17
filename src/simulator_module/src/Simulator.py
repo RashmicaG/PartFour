@@ -562,13 +562,14 @@ class BlocksWorld:
     def on_execute(self):
         self.screen.on_init()
         # self.makeRandomBlocks()
-        self.screen.on_render(self.blocks, self.arm, self.boundaries)
+        strings = ["Hello", "rashmica"]
+        self.screen.on_render(self.blocks, self.arm, self.boundaries, strings)
         while(self.screen.running):
             for event in pygame.event.get():
                 self.screen.on_event(event)
             self.on_loop()
-            self.screen.on_render(self.blocks, self.arm, self.boundaries)
-            pygame.time.wait(5)
+            self.screen.on_render(self.blocks, self.arm, self.boundaries, strings)
+            pygame.time.wait(50)
         self.screen.on_cleanup()
 
 if __name__ == "__main__":
