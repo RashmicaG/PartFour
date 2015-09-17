@@ -9,7 +9,6 @@ class Block:
         self.boundaries = boundaries
         self.rect = pygame.Rect(position[0], position[1], self.shape.width, self.shape.height)
         self.direction = []
-        self.supported = False
         self.grabbed = False
         self.grabdist = 10
     def getIsGrabbed(self):

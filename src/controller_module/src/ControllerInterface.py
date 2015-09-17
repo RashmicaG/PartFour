@@ -9,6 +9,7 @@ from std_msgs.msg import Int16
 from collections import deque
 from learning_module.msg import *
 from learning_module.srv import *
+from simulator_module.srv import *
 import random
 import types
 
@@ -22,13 +23,13 @@ class Robot:
         self.goalConfig = Configuration([])
         self.currentState = State(Configuration([]), [] )
         self.currentAction = Action('null', 'null', 'null', 0, Configuration([]),  False)
-        self.newSet = True
+        self.newSet = False
 
         # self.blocks = [Block('null', 'null', 'null', 'null'), Block('null', 'null', 'null', 'null')]
                 # only for testing purposes
-        self.blocks = [Block('block0', 'cuboid', 'blue', 'small'), 
-                    Block('block1', 'prism', 'red', 'small'), 
-                    Block('block2', 'cube', 'blue', 'small'), 
+        self.blocks = [Block('block0', 'cuboid', 'blue', 'small'),
+                    Block('block1', 'prism', 'red', 'small'),
+                    Block('block2', 'cube', 'blue', 'small'),
                     # Block('block3', 'cube', 'red', 'small'),
                     # Block('block4', 'prism', 'small', 'yellow')
                     ]
@@ -51,8 +52,8 @@ class Robot:
 
 
     def generateBlockConfig(self, test, max = 4, min = 3):
-        """ A configuration of blocks is represented as 
-        a list. Each index represents a block, and the value 
+        """ A configuration of blocks is represented as
+        a list. Each index represents a block, and the value
         at this index represents what this block is on:
         -1 - table, 0-n: the index of the block it is on.
         MAX and MIN CANNOT be the same"""
@@ -156,13 +157,15 @@ class Robot:
         # Check validity of destination
         rospy.wait_for_service('AspCurrentState')
         # try:
+        print "Send this state to the ASP"
+        print self.currentState
         sendState = rospy.ServiceProxy('AspCurrentState', AspCurrentState)
         success = sendState(self.currentState)
 
 
         # except rospy.ServiceException, e:
         #     print "Service call failed: %s" % e
-    
+
     def sendStateToLearningModule(self):
         rospy.wait_for_service('LMInitialise')
         try:
@@ -170,7 +173,7 @@ class Robot:
             success = sendState(self.currentState)
         except rospy.ServiceException, e:
 			print "Service call failed %s" % e
-	
+
     def sendActionToLearningModule(self, error):
         if error is False:
             rospy.wait_for_service('LMStateActionTaken')
@@ -181,12 +184,12 @@ class Robot:
             except rospy.ServiceException, e:
                 print "Service call failed %s" % e
 
-        else:   
+        else:
             rospy.wait_for_service('LMErrorHasOccured')
             try:
                 if self.currentAction.action == "put_down":
                     sendStateAction = rospy.ServiceProxy('LMErrorHasOccured', LMErrorHasOccured)
-                    sucess = sendStateAction(self.currentAction) 
+                    sucess = sendStateAction(self.currentAction)
             except rospy.ServiceException, e:
                 print "Service call failed %s" % e
 
@@ -198,7 +201,7 @@ class Robot:
             success = sendState(self.blocks)
         except rospy.ServiceException, e:
             print "Service call failed %s" % e
-        
+
     def publisher(self, pub, msg):
         try:
             pub.publish(msg)
@@ -206,9 +209,17 @@ class Robot:
             print "Publishing failed call failed:"
 
         return
-            
-    def executeAction(self, action):
+
+    def executeAction(self):
         """ This will send action to robot module and return feedback"""
+        rospy.wait_for_service('SimulatorAddAction')
+        try:
+            sendState = rospy.ServiceProxy('SimulatorAddAction', SimulatorAddAction)
+            state = sendState(self.currentAction)
+            configuration = Configuration(state.state.configuration.config)
+            self.currentState = State(configuration = configuration, block_properties = state.state.block_properties)
+        except rospy.ServiceException, e:
+            print "Service call failed %s" % e
         pass
 
     def getConfigBlocks(self):
@@ -224,12 +235,12 @@ class Robot:
         for block in self.blocks:
 
             if block.label == self.currentAction.destinationBlock:
-                # print block.shape 
+                # print block.shape
                 if block.shape == 'prism':
                     return None
 
         return expectedConfig
-    
+
 
 
 ########################################################################
@@ -237,7 +248,7 @@ class Robot:
 
     def initial(self):
         # print "initial"
-        
+
 
         # CHECK IF NEW CONFIGURATION OF BLOCKS HAS ARRIVED
         # TO DO
@@ -245,12 +256,10 @@ class Robot:
         if (self.newSet is True):
             self.generateBlockConfig('hi')
             self.newSet = False
-        
+
         print "inital config"
         print self.currentState.configuration.config
         self.goalConfig  = self.currentState.configuration
-
-
 
         # generate goal configuration and make sure it is different from initial
         while( self.goalConfig.config  == self.currentState.configuration.config):
@@ -260,7 +269,7 @@ class Robot:
         # print self.currentState.configuration
 
         rand = random.randrange(0,3)
-       
+
         # set up Learning Module
         if self.newSet is True and rand <1:
             self.sendNewBlockSetToLearningModule()
@@ -276,32 +285,30 @@ class Robot:
         # send inital and goal configuraton to ASP_MODULE
         self.sendStateToAspModule()
         self.sendGoalToAspModule()
-
-
         # now we are ready to execute actions
         self.state = 'execute'
 
     def execute(self):
-        # print 'execute'
-
+        print 'execute'
         # when no answer set, this breaks. FIX
         # self.sendGoalToRobotModule()
+        self.executeAction()
         print self.currentAction
         self.state = 'feedback'
-
+        print "executed action"
     def feedback(self):
-        # print 'feedback'
-        
+        print 'feedback'
         expectedConfig = self.currentAction.config
-
+        config = self.currentState.configuration
+        print config
         # config = self.getConfigBlocks() -- what we would do with real robot
-        config = self.simulateError(expectedConfig)
+        # config = self.simulateError(expectedConfig)
 
         # print self.currentState
         # print expectedConfig
         # config = self.currentState.configuration
 
-  
+
         if config != expectedConfig:
             print 'FAILURE'
             self.sendActionToLearningModule(True)
@@ -340,7 +347,10 @@ if __name__ == '__main__':
             }
 
     car = 0
-
+    r.executeAction()
+    print "print current state"
+    print r.currentState
+    print "######################"
     while(car < 1000):
         # pass
         states[r.state]()
@@ -349,29 +359,29 @@ if __name__ == '__main__':
     rospy.wait_for_service('LMGenerateRules')
     try:
             getRules = rospy.ServiceProxy('LMGenerateRules', LMGenerateRules)
-            rules = getRules() 
+            rules = getRules()
             print rules
     except rospy.ServiceException, e:
         print "Service call failed %s" % e
-    
-  
-        
 
-    
+
+
+
+
     timestep_publisher = rospy.Publisher('/controller/timestep', Int16, queue_size=10)
-    
-    observation_publisher = rospy.Publisher('/controller/observations', Observation, queue_size=10)  
-    # configuration_publisher = rospy.Publisher('/controller/configuration', Configuration, queue_size=10)    
+
+    observation_publisher = rospy.Publisher('/controller/observations', Observation, queue_size=10)
+    # configuration_publisher = rospy.Publisher('/controller/configuration', Configuration, queue_size=10)
      # rate = rospy.Rate(10)
     print 'Publishers running...'
-    
+
 
 
     # r.sendGoalToAspModule('goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).')
     # r.sendGoalToAspModule('goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).')
     # r.publisher( timestep_publisher, r.timestep)
     # r.sendGoalToAspModule('goal(I) :- holds(on(block0, s5), I), holds(on(block1, s2), I), holds(on(block2, s5), I), holds(on(block3, s4), I), holds(on(block4, s0), I).')
-    # 
+    #
     # holds(on(block1, s2), 0).
     # obs = (Observation(negation=False, fluent='on', argument1='block1', argument2='s2', timestep=r.timestep))
 

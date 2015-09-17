@@ -125,6 +125,8 @@ class ASPInterface:
 
                 if config[surface] == -1: #error IndexError: tuple index out of range
                     outfile.write('holds(on(' + block.label + ', s' + str(size) + '), 0).\n')
+                elif config[surface] == -2:
+                    outfile.write('holds(has_object(rob0, '+ block.label +'),0).\n')
                 else:
                     outfile.write('holds(on(' + block.label + ', s' + str(config[surface]) + '), 0).\n')
                 surface = surface +1
@@ -170,7 +172,7 @@ class ASPInterface:
                 self.goal = string
                 self.iterator = 0
                 timestep = self.timestep
-                max_timestep = 17  
+                max_timestep = 17
                 #TODO make this dependant on the num of blocks
 
                 while(timestep <max_timestep):
