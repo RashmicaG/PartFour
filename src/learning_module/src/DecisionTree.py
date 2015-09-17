@@ -6,12 +6,12 @@ Created on Mon Jul 20 14:06:48 2015
 """
 
 """
-Node is either an attribute or a leaf. 
-A node would contain its own subset. This it receives from the parent node and 
+Node is either an attribute or a leaf.
+A node would contain its own subset. This it receives from the parent node and
 branch it came from.
 A node contains its children nodes.
 A node contains its own set of information.
-It needs to be seperated 
+It needs to be seperated
 """
 from copy import deepcopy
 import random
@@ -34,19 +34,19 @@ class Node:
             return False
     def setLeafNode(self):
         self.leaf = True
-    
+
     def setChildrenAttributes(self, children_attr):
         self.children_attr = children_attr
     def getChildrenAttributes(self):
-        return self.children_attr    
-    
-    
-    
+        return self.children_attr
+
+
+
     def setRules(self, rules):
         self.rules = rules
     def getRules(self):
         return self.rules
-        
+
     def getAttribute(self):
         return self.attribute
     def getBound(self):
@@ -59,7 +59,7 @@ class Node:
         return self.training_set
     def getChildNodes(self):
         return self.children_nodes
-    
+
 class Attribute:
     def __init__(self, name, index, values):
         self.name = name
@@ -93,9 +93,9 @@ class DecisionTree:
 
     def findChildrenNode(self, current_node, attributes, subset):
         child_node = self.findNextBestNode(attributes, subset[1])
-        if child_node != None:        
+        if child_node != None:
             new_rule = current_node.getRules()+[(current_node.getAttribute().getName()+subset[0]+")")]
-            child_node.setRules(new_rule)                
+            child_node.setRules(new_rule)
             position = self.findPositionOfAttribute(attributes, child_node)
             child_attrs = attributes[:position]+attributes[position+1:]
             child_node.setChildrenAttributes(child_attrs)
@@ -103,7 +103,7 @@ class DecisionTree:
             #print len(attributes)
             child_node = self.addLeafNode(current_node)
         return child_node
-        
+
     def getBoundNode(self, child_nodes):
         print child_nodes
         child_nodes = sorted(child_nodes, key=operator.attrgetter('bound'), reverse = True)
@@ -115,7 +115,7 @@ class DecisionTree:
         leaf_node = Node(None, current_node.getTrainingSet())
         leaf_node.setRules(new_rule)
         return leaf_node
-    
+
     def createDecisionTree(self, current_node = None):
 
         if current_node == None:
@@ -140,8 +140,6 @@ class DecisionTree:
             child_nodes.remove(best_node)
         for node in child_nodes:
             self.createDecisionTree(node)
-        return self.rules
-
 
     def averageQValue(self, trainingSet):
         qvals = []
@@ -149,7 +147,7 @@ class DecisionTree:
             qvals.append(t[-1])
         average = sum(qvals)/len(qvals)
         return average
-    
+
     def findPositionOfAttribute(self, attributes, node):
         i = 0
         for attr in attributes:
@@ -158,14 +156,14 @@ class DecisionTree:
             i+=1
         print "Not Found"
         return None
-    
+
     def prioritizeSubsets(self, subsets):
-        subsets.sort(key=lambda x: x[2])        
+        subsets.sort(key=lambda x: x[2])
         return subsets
-        
+
     def getParentNode(self):
         return self.parent_node
-                    
+
     def calcVariance(self, qlist):
         if len(qlist) != 0:
             average = float(sum(qlist))/float(len(qlist))
@@ -175,7 +173,7 @@ class DecisionTree:
             return variance
         else:
             return None
-            
+
     def createSubsets(self, current_node):
         temp_subsets = []
         subsets = []
@@ -197,7 +195,7 @@ class DecisionTree:
             variance = self.calcVariance(qlist)
             value[2] = variance
         return subsets
-        
+
     def findNextBestNode(self, attributes, training_sample):
         current_best = None
         max_gain = 0.0
@@ -225,4 +223,3 @@ class DecisionTree:
             current_best = Node(rand_attr, training_sample)
         current_best.setBound(max_gain)
         return current_best
-

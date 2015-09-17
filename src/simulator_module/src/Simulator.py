@@ -10,15 +10,19 @@ from RuleBox import RuleBox
 from Screen import Screen
 from asp_module.msg import *
 from simulator_module.srv import *
+from simulator_module.msg import *
 from controller_module.srv import *
+from std_msgs.msg import String
+import re
+
 
 class BlocksWorld:
     def __init__(self):
         self.screen = Screen(1024, 768)
         self.blocks = []
-        self.shape = ("Prism", "Cube", "Cuboid")
-        self.colour = ("Red", "Blue", "Green")
-        self.size = ("Small" , "Medium", "Large")
+        self.shape = ("prism", "cube", "cuboid")
+        self.colour = ("red", "blue", "green")
+        self.size = ("small" , "medium", "large")
         self.boundaries = [((0,402), (1024,402)),((700,0),(700,400))]
         self.table = 400
         self.wall = 700
@@ -29,8 +33,16 @@ class BlocksWorld:
         self.dblock = None
         self.big_block = False
         self.config_flag = False
+        self.start_config = False
+        self.send = False
+        self.stringsToPrint = []
         rospy.init_node('simulator', anonymous=True)
         srv_addAction = rospy.Service('SimulatorAddAction', SimulatorAddAction, self.getAction)
+        self.print_suscriber = rospy.Subscriber('/controller/print', Data, self.thingsToPrint)
+        self.print_suscriber2 = rospy.Subscriber('/controller/print2', String, self.thingsToPrint2)
+        self.print_suscriber3 = rospy.Subscriber('/controller/print3', String, self.thingsToPrint3)
+        self.failed = False
+        self.iterations = 0
 
     def initialise_Simulator(self):
         self.colliding_blocks = []
@@ -44,33 +56,33 @@ class BlocksWorld:
         for block in self.blocks:
             block_colour = colour_vars[block.colour]
             block_msg.append(Block(label = "block"+str(block.index), shape = block.shape.shape, colour = block_colour, size = block.size))
-        return [config_msg, block_msg]:
+        return [config_msg, block_msg]
 
 
-    def sendState:
-         """ This will send state to controller"""
+    def sendState(self, current_state):
+#         """ This will send state to controller"""
         rospy.wait_for_service('AddCurrentState')
         try:
             sendState = rospy.ServiceProxy('AddCurrentState', AddCurrentState)
-            state = sendState(self.currentAction)
-            configuration = Configuration(state.state.configuration.config)
-            self.currentState = State(configuration = configuration, block_properties = state.state.block_properties)
+            state = sendState(current_state)
+            # configuration = Configuration(state.state.configuration.config)
+            # self.currentState = State(configuration = configuration, block_properties = state.state.block_properties)
         except rospy.ServiceException, e:
             print "Service call failed %s" % e
 
     def makeRandomBlocks(self):
-        shape_vars = {"Prism": [30,30], "Cube":[30,30], "Cuboid" : [60,30]}
-        size_vars = {"Small": [-5,-5], "Medium": [5,5],"Large": [30, 30]}
-        colour_vars = {"Red": (255,0,0), "Green":(0,255,0), "Blue":(0,0,255)}
+        shape_vars = {"prism": [30,30], "cube":[30,30], "cuboid" : [60,30]}
+        size_vars = {"small": [-5,-5], "medium": [5,5],"large": [30, 30]}
+        colour_vars = {"red": (255,0,0), "green":(0,255,0), "blue":(0,0,255)}
         for i in range(0,3):
-            rand_shape = r.choice(self.shape)
-            rand_colour = r.choice(self.colour)
-            rand_size = r.choice(self.size)
+            rand_shape = self.shape[i]#r.choice(self.shape)
+            rand_colour = self.colour[i]
+            rand_size = self.size[1]#r.choice(self.size)
             width = shape_vars[rand_shape][0] + size_vars[rand_size][0]
             height = shape_vars[rand_shape][1] + size_vars[rand_size][1]
             colour = colour_vars[rand_colour]
             block_shape = Shape(rand_shape, (width, height))
-            position = [150*i + r.randint(20,50), 400 - height]
+            position = [150*i + r.randint(75,100), 400 - height]
             self.blocks.append(B(i,block_shape, colour, rand_size, position, self.boundaries[0]))
 
     def blockOverlapCheck(self):
@@ -112,7 +124,7 @@ class BlocksWorld:
             if block.shape.width < self.arm.pincher_seperation-rpw-7:
                 self.arm.grabbing = False
                 block.setGrabbed(False)
-            if block.shape.shape == "Prism":
+            if block.shape.shape == "prism":
                 if self.arm.base_rect.colliderect(block.rect):
                     if by < aby+abh:
                         self.arm.move("Up")
@@ -130,7 +142,6 @@ class BlocksWorld:
                                     block.move("Left")
                                     # self.arm.move("Right")
                             elif lpx + lpw < bx + bw/2:
-                                print self.arm.pincher_seperation
                                 left_side = (lpy+lph - l_c)/l_m
                                 if lpx+lpw > left_side and lpx <= left_side:
                                     if block.shape.width >= self.arm.pincher_seperation-lpw+2:
@@ -238,18 +249,20 @@ class BlocksWorld:
         b1x, b1y = block1.position
         b2x, b2y = block2.position
         if b1y + block1.shape.height > b2y and b1y < b2y:
-            if block2.shape.shape != "Prism":
+            if block2.shape.shape != "prism":
                 block1.supported = True
+            else:
+                block1.supported = False
         else:
             block1.supported = False
         falling = self.topBlockIsFalling(block1, block2)
         b1_on_right = self.b1OnRight(block1, block2)
-        b2_on_right = self.b2OnRight(block1, block2)
+        # b2_on_right = self.b2OnRight(block1, block2)
         if falling == True:
             if b1_on_right == True:
                 block1.move("Right")
                 block2.move("Left")
-            elif b2_on_right == True:
+            else:
                 block1.move("Left")
                 block2.move("Right")
         else:
@@ -283,8 +296,9 @@ class BlocksWorld:
         if topBlock != None and bottomBlock != None:
             b1x, b1y = topBlock.position
             b2x, b2y = bottomBlock.position
-            if bottomBlock.shape.shape == "Prism":
+            if bottomBlock.shape.shape == "prism":
                 return True
+                topBlock.supported = False
             else:
                 if topBlock.shape.width < bottomBlock.shape.width:
 
@@ -297,6 +311,7 @@ class BlocksWorld:
                         return False
                     else:
                         return True
+                        topBlock.supported = False
                 else:
                     t_mid = b1x + topBlock.shape.width/2
                     b_mid = b2x + bottomBlock.shape.width/2
@@ -305,6 +320,7 @@ class BlocksWorld:
                         return False
                     else:
                         return True
+                        topBlock.supported = False
         else:
             return False
 
@@ -342,17 +358,21 @@ class BlocksWorld:
         config = []
         for block in self.blocks:
             bx, by = block.position
-            if by + block.shape.height == self.table:
+            if by + block.shape.height >= self.table:
                 config.append(-1)
+            elif block.grabbed == True:
+                config.append(-2)
             else:
+                temp = None
                 for dest_block in self.blocks:
                     dx, dy = dest_block.position
                     if block.index != dest_block.index:
-                        if dy-1 <= by+block.shape.height:
-                            if bx + block.shape.width/2 > dx and bx + block.shape.width/2 < dx + dest_block.shape.width:
-                                config.append(dest_block.index)
-                                break
-        print config
+                        if bx + block.shape.width/2 > dx and bx + block.shape.width/2 < dx + dest_block.shape.width:
+                            if block.supported == True and by < dy:
+                                if temp == None or temp.position[1] > dy:
+                                    temp = dest_block
+                config.append(temp.index)
+
         return config
 
     def armControl(self):
@@ -382,24 +402,25 @@ class BlocksWorld:
                         self.state = 2
                         print self.state
                 if self.state == 2:
-                    if self.ablock.shape.shape == "Prism":
-                        if lpy+lph < self.ablock.position[1]+self.ablock.shape.height*0.92:
+                    if self.ablock.shape.shape == "prism":
+                        if lpy+lph < self.ablock.position[1]+self.ablock.shape.height*0.85:
                             self.arm.move("Down")
-                            if self.ablock.size == "Large":
+                            if self.ablock.size == "large":
                                 if army+ self.arm.base_height >= self.ablock.position[1]:
                                     self.state = 7
+                                    print self.state
                         else:
                             self.state = 3
                             print self.state
                     else:
-                        if self.ablock.size == "Large":
-                            if self.ablock.shape.shape == "Cuboid":
+                        if self.ablock.size == "large":
+                            if self.ablock.shape.shape == "cuboid":
                                 if lpy+lph >= self.ablock.position[1]:
                                     self.state = 7
                                     print self.state
                                 else:
                                     self.arm.move("Down")
-                            elif self.ablock.shape.shape == "Cube":
+                            elif self.ablock.shape.shape == "cube":
                                 if army+ self.arm.base_height >= self.ablock.position[1]:
                                     self.state = 7
                                     print self.state
@@ -426,40 +447,73 @@ class BlocksWorld:
                     else:
                         if self.dblock != None:
                             self.state = 5
-                            print self.state
+                        if self.send == False:
+                            state = self.sendCurrentState()
+                            self.send = True
+                            self.sendState(state)
+
                         # Call Controller service to send state
                     ### GIve configuration here
                     ### Waits for action
 
                 if self.state == 5:
+                    self.send = False
                     self.config_flag = False
-                    if self.ablock.position[0] + self.ablock.shape.width/2 > self.dblock.position[0] + self.dblock.shape.width/2:
-                        self.arm.move("Left")
-                    elif self.ablock.position[0] + self.ablock.shape.width/2 < self.dblock.position[0] + self.dblock.shape.width/2:
-                        self.arm.move("Right")
-                    else:
-                        self.state = 6
-                        print self.state
-                if self.state == 6:
-                    if self.ablock.position[1] + self.ablock.shape.height >= self.dblock.position[1]:
-                        if p_s <= self.arm.MAX_PINCHER_SEPERATION:
-                            self.arm.grab("Open")
+                    if self.dblock != "tab0":
+                        if self.ablock.position[0] + self.ablock.shape.width/2 > self.dblock.position[0] + self.dblock.shape.width/2:
+                            self.arm.move("Left")
+                        elif self.ablock.position[0] + self.ablock.shape.width/2 < self.dblock.position[0] + self.dblock.shape.width/2:
+                            self.arm.move("Right")
                         else:
-                            self.state = 7
+                            self.state = 6
                             print self.state
                     else:
-                        self.arm.move("Down")
+                        if self.ablock.position[0] > self.ablock.home_position[0]:
+                            self.arm.move("Left")
+                        elif self.ablock.position[0] < self.ablock.home_position[0]:
+                            self.arm.move("Right")
+                        else:
+                            self.state = 6
+                if self.state == 6:
+                    if self.dblock != "tab0":
+                        if self.ablock.position[1] + self.ablock.shape.height >= self.dblock.position[1]:
+                            if p_s <= self.arm.MAX_PINCHER_SEPERATION:
+                                self.arm.grab("Open")
+                                self.ablock.supported = False
+                            else:
+                                self.state = 7
+                                print self.state
+                        else:
+                            self.arm.move("Down")
+                    else:
+                        if self.ablock.position[1] >= self.ablock.home_position[1]:
+                            if p_s <= self.arm.MAX_PINCHER_SEPERATION:
+                                self.arm.grab("Open")
+                            else:
+                                self.state = 7
+                                print self.state
+                        else:
+                            self.arm.move("Down")
                 if self.state == 7:
                     if army > 100:
                         self.arm.move("Up")
                     else:
                         self.state = -1
+                        self.iterations += 1
                         print self.state
+                        state = self.sendCurrentState()
+                        self.sendState(state)
                         #Call controller service
                 if self.state == -1:
                     self.config_flag = False
                     self.ablock = None
                     self.dblock = None
+                    if self.start_config == True:
+                        config_msg, block_msg = self.initialise_Simulator()
+                        print config_msg
+                        self.sendState(State(configuration = config_msg, block_properties = block_msg))
+                        self.start_config = False
+                    
 
             elif army <= 1:
                 self.arm.move("Down")
@@ -480,25 +534,32 @@ class BlocksWorld:
 
     def getAction(self, action):
         # block = raw_input("Enter Blocks: ")
-        # print action
+        print action
         ab = None
         db = None
         if action.action.actionableBlock == "null" and action.action.destinationBlock == "null":
-            config_msg, block_msg = self.initialise_Simulator()
-            return SimulatorAddActionResponse(state = State(configuration = config_msg, block_properties = block_msg))
-        print action.action.actionableBlock
-        if self.state == -1 and action.action.actionableBlock != "null":
-            ab = int(action.action.actionableBlock[-1])
-            self.state = 0
-        elif self.state == 4 and action.action.destinationBlock != "null":
-            db = int(action.action.destinationBlock[-1])
-        #db = blocks[1]
-        for b in self.blocks:
-            if ab != db:
-                if ab == b.index:
-                    self.ablock = b
-                if db == b.index:
-                    self.dblock = b
+            print "gets set true"
+            self.start_config = True
+        else:
+            if self.state == -1 and action.action.actionableBlock != "null":
+                ab = int(action.action.actionableBlock[-1])
+                self.state = 0
+            elif self.state == 4:
+                if action.action.destinationBlock == "tab0":
+                    db = -1
+                elif action.action.destinationBlock != "null":
+                    db = int(action.action.destinationBlock[-1])
+            #db = blocks[1]
+            for b in self.blocks:
+                if db != -1:
+                    if ab != db:
+                        if ab == b.index:
+                            self.ablock = b
+                        if db == b.index:
+                            self.dblock = b
+                else:
+                    self.dblock = "tab0"
+        return 1
 
     def sendCurrentState(self):
         config_msg = Configuration(config = self.getConfiguration())
@@ -506,21 +567,55 @@ class BlocksWorld:
         colour_vars = {(255,0,0):"Red", (0,255,0):"Green", (0,0,255):"Blue"}
         for block in self.blocks:
             block_colour = colour_vars[block.colour]
-            print
             block_msg.append(Block(label = "block"+str(block.index), shape = block.shape.shape, colour = block_colour, size = block.size))
-        print self.getConfiguration()
-        return SimulatorAddActionResponse(state = State(configuration = config_msg, block_properties = block_msg))
+        return State(configuration = config_msg, block_properties = block_msg)
+
+    def thingsToPrint(self, data):
+        print "*************"
+        print data.goal
+        print data.action
+        print "*************"
+
+        self.stringsToPrint = []
+
+        self.stringsToPrint.append("Action:")
+        self.stringsToPrint.append(data.action.action)
+        self.stringsToPrint.append(data.action.actionableBlock)
+        if data.action.destinationBlock == "tab0":
+            self.stringsToPrint.append("table")
+        elif data.action.destinationBlock != "null0":
+            self.stringsToPrint.append(data.action.destinationBlock)
+        if data.action.goalAchieved:
+            self.stringsToPrint.append("Goal: ACHEIVED")
+        else:
+            self.stringsToPrint.append("Goal:")
+        for block in list(data.goal.config):
+            self.stringsToPrint.append(str(block))
+
+    def thingsToPrint2(self, data):
+        self.stringsToPrint = []
+        self.stringsToPrint.append(data)
+
+    def thingsToPrint3(self, state):
+        print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+        self.failed = True
+
 
     def on_execute(self):
         self.screen.on_init()
         # self.makeRandomBlocks()
-        self.screen.on_render(self.blocks, self.arm, self.boundaries)
+        bool = False
+        self.screen.on_render(self.blocks, self.arm, self.boundaries, self.stringsToPrint, bool)
         while(self.screen.running):
             for event in pygame.event.get():
                 self.screen.on_event(event)
             self.on_loop()
-            self.screen.on_render(self.blocks, self.arm, self.boundaries)
-            pygame.time.wait(5)
+            print self.iterations
+            print self.failed
+            if self.iterations >5 and self.failed == True:
+                bool = True
+            self.screen.on_render(self.blocks, self.arm, self.boundaries, self.stringsToPrint, bool)
+            pygame.time.wait(3)
         self.screen.on_cleanup()
 
 if __name__ == "__main__":
@@ -530,3 +625,8 @@ if __name__ == "__main__":
     display = BlocksWorld()
     display.on_execute()
     # rospy.spin()
+
+
+        # shape_vars = {"prism": [30,30], "cube":[30,30], "cuboid" : [60,30]}
+        # size_vars = {"small": [-5,-5], "medium": [5,5],"large": [30, 30]}
+        # colour_vars = {"red": (255,0,0), "green":(0,255,0), "blue":(0,0,255)}

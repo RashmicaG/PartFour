@@ -202,6 +202,7 @@ class ASPInterface:
     def parse_answer(self, raw, timestep):
         """ This parses an answer set, looking for actions with blocks"""
         # try:
+        max_timestep = timestep
         parsed =[] # Use this to save list of SubGoals
         if len(raw) <2:
             pass
@@ -242,6 +243,7 @@ class ASPInterface:
 
                     parsed.insert(int(timestep),(Action(action = action, actionableBlock = block, destinationBlock = destBlock, timestep=int(timestep), config =self.getExpectedConfig(timestep), goalAchieved = False)))
 
+                    
         parsed.sort(key=lambda x: int(x.timestep))
         self.current_plan = parsed
         return

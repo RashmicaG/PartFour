@@ -43,7 +43,7 @@ class LearningModule:
 
         # initialise
         self.mdp_list.append([])
-        
+
 
     def initialise_lists(self):
         self.success_config.append([])
@@ -53,7 +53,7 @@ class LearningModule:
             blocks = []
             for prop in state.initial_state.block_properties:
                 blocks.append(Block(prop.label, prop.shape, prop.colour, prop.size))
-            start_config = state.initial_state.configuration.config 
+            start_config = state.initial_state.configuration.config
             startingState = State(0, start_config)
             self.initialise_lists()
             self.success_config[-1].append(startingState)
@@ -130,7 +130,7 @@ class LearningModule:
             if action.getActionableBlock() == action_block:
                 if action.getDestinationBlock() == dest_block:
                     action_chosen = action
-                    
+
         self.mdp_list[-1][-1].onPolicyLearning(action_chosen)
         error_config = self.mdp_list[-1][-1].getErrorState()
         print error_config
@@ -144,8 +144,7 @@ class LearningModule:
     def onPolicyLearning(self, action):
         # try:
         """ This will be the callback function"""
-        print action.action_chosen
-   
+
         actionableBlock = int(re.findall('\d+$',action.action_chosen.actionableBlock)[0])
         if(re.findall('tab',action.action_chosen.destinationBlock)):
             destinationBlock = None
@@ -153,8 +152,7 @@ class LearningModule:
             destinationBlock = int(re.findall('\d+$',action.action_chosen.destinationBlock)[0])
 
         action_chosen = None
-
-
+        print action.action_chosen
         for action in self.mdp_list[-1][-1].errorstate.actions:
             print action.actionableBlock
             print action.destinationBlock
@@ -187,19 +185,20 @@ class LearningModule:
                                blocks[dest_block].getColour(),blocks[dest_block].getSize(),
                                mdp.getQMatrix()[state.getLabel()][action.getNextStateAddr()])
                 self.StateActionPairs.append(example)
-        return 
+        return
 
     def generateRules(self, randomCharacterBeingSentSomehow):
-        
+
         print"generateRules"
-    
+
         reduced_mdp_list = []
         attributes = []
         self.mdp_list[-1] = [self.combineIdenticalMDPs(self.mdp_list[-1])]
         self.writeToList(self.mdp_list[-1][-1])
 
         training_set = self.StateActionPairs
-
+        for sample in training_set:
+            print sample
         attr_shape = ("prism", "cube", "cuboid")
         attr_colour = ("red", "blue", "green")
         attr_size = ("small","medium","large")
@@ -213,18 +212,18 @@ class LearningModule:
             attributes.append(Attribute(name, index, vals))
             index += 1
         self.decision_tree = DecisionTree(attributes, training_set)
-        rules = self.decision_tree.createDecisionTree()
+        rules = self.decision_tree.getRules()
 
-        list_ = []
-        for rule in rules:
-            average = 0
-            for data in rule[-1]:
-                average += data[-1]
-            average = average/len(rule[-1])
-            list_.append((rule[0], average))
+        # list_ = []
+        # for rule in rules:
+        #     average = 0
+        #     for data in rule[-1]:
+        #         average += data[-1]
+        #     average = average/len(rule[-1])
+        #     list_.append((rule[0], average))
 
 
-        rules = self.selectRules(list_)
+        rules = self.selectRules(rules)
         print "WOOO"
         print rules
         return rules
@@ -286,4 +285,3 @@ if __name__ == '__main__':
 
     print "Ready to learn!"
     rospy.spin()
-

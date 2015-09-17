@@ -94,7 +94,7 @@ class MDP:
         for state in stackstate:
             self.rewardmat[state.getLabel()] = -2.2
             print "stack state"
-        self.rewardmat[errorstate.getLabel()] = 10
+        self.rewardmat[errorstate.getLabel()] = 5.5
         for i in range(0,2000):
             currentstate = r.choice(self.statelist)
             for state in self.statelist:

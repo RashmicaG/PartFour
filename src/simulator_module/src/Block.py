@@ -6,6 +6,7 @@ class Block:
         self.colour = colour
         self.size = size
         self.position = position
+        self.home_position = self.position
         self.boundaries = boundaries
         self.rect = pygame.Rect(position[0], position[1], self.shape.width, self.shape.height)
         self.direction = []
@@ -36,7 +37,7 @@ class Block:
         self.rect = pygame.Rect(self.position[0], self.position[1], self.shape.width, self.shape.height)
 
     def renderShape(self, surface):
-        if self.shape.shape == "Prism":
+        if self.shape.shape == "prism":
             node_1 = self.position[0], self.position[1] + self.shape.height
             node_2 = self.position[0] + self.shape.width, self.position[1] + self.shape.height
             node_3 = self.position[0] + self.shape.width/2, self.position[1]
