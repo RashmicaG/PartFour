@@ -10,6 +10,7 @@ from RuleBox import RuleBox
 from Screen import Screen
 from asp_module.msg import *
 from simulator_module.srv import *
+from controller_module.srv import *
 
 class BlocksWorld:
     def __init__(self):
@@ -43,7 +44,19 @@ class BlocksWorld:
         for block in self.blocks:
             block_colour = colour_vars[block.colour]
             block_msg.append(Block(label = "block"+str(block.index), shape = block.shape.shape, colour = block_colour, size = block.size))
-        return [config_msg, block_msg]
+        return [config_msg, block_msg]:
+
+
+    def sendState:
+         """ This will send state to controller"""
+        rospy.wait_for_service('AddCurrentState')
+        try:
+            sendState = rospy.ServiceProxy('AddCurrentState', AddCurrentState)
+            state = sendState(self.currentAction)
+            configuration = Configuration(state.state.configuration.config)
+            self.currentState = State(configuration = configuration, block_properties = state.state.block_properties)
+        except rospy.ServiceException, e:
+            print "Service call failed %s" % e
 
     def makeRandomBlocks(self):
         shape_vars = {"Prism": [30,30], "Cube":[30,30], "Cuboid" : [60,30]}
