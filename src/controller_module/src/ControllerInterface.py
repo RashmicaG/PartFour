@@ -27,6 +27,7 @@ class Robot:
         self.newSet = True
         self.dict = {}
         self.prevGoalConfig = Configuration([])
+        self.prevBlockConfig = Configuration([])
 
         # self.blocks = [Block('null', 'null', 'null', 'null'), Block('null', 'null', 'null', 'null')]
                 # only for testing purposes
@@ -139,6 +140,7 @@ class Robot:
                 prevValue=random.choice(list(prevValue))
             # print "yayyy"
             # print prevValue
+            self.prevBlockConfig = self.currentAction.config
             self.currentAction = Action(prevValue[0], prevValue[1], prevValue[2], 0, Configuration(prevValue[3]), False)
             # print self.currentAction
             return
@@ -151,6 +153,7 @@ class Robot:
             # print "goal"
             # print self.goalConfig
             ans = asp_answer(self.goalConfig).parsed
+            self.prevBlockConfig = self.currentAction.config
             self.currentAction = Action(ans.action, ans.actionableBlock, ans.destinationBlock, ans.timestep, ans.config, ans.goalAchieved)
 
             self.goalActive = True
@@ -222,9 +225,7 @@ class Robot:
         rospy.wait_for_service('SimulatorAddAction')
         try:
             sendState = rospy.ServiceProxy('SimulatorAddAction', SimulatorAddAction)
-            state = sendState(self.currentAction)
-            configuration = Configuration(state.state.configuration.config)
-            self.currentState = State(configuration = configuration, block_properties = state.state.block_properties)
+            success = sendState(self.currentAction)
         except rospy.ServiceException, e:
             print "Service call failed %s" % e
         
@@ -232,6 +233,8 @@ class Robot:
     def addCurrentState(self, state):
         """ Gets configuration of blocks from robot"""
         print state
+        configuration = Configuration(state.state.configuration.config)
+        self.currentState = State(configuration = configuration, block_properties = state.state.block_properties)
         
 
     def simulateError(self, expectedConfig):
@@ -374,12 +377,17 @@ class Robot:
 
     def feedback(self):
         # print 'feedback'
-        
+
+
         expectedConfig = deepcopy(self.currentAction.config)
-        config = deepcopy(expectedConfig)
+
+        while(self.prevBlockConfig == self.currentAction.config):
+            pass
+        
+
+        config = self.currentAction.config
         # print expectedConfig.config
-        # config = self.getConfigBlocks() -- what we would do with real robot
-        self.simulateError(config)
+        # self.simulateError(config)
 
         # print expectedConfig.config
         # print config.config
