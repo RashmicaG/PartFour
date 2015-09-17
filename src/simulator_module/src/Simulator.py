@@ -339,6 +339,7 @@ class BlocksWorld:
                             if bx + block.shape.width/2 > dx and bx + block.shape.width/2 < dx + dest_block.shape.width:
                                 config.append(dest_block.index)
                                 break
+        print config
         return config
 
     def armControl(self):
@@ -413,7 +414,7 @@ class BlocksWorld:
                         if self.dblock != None:
                             self.state = 5
                             print self.state
-                        self.config_flag = True
+                        # Call Controller service to send state
                     ### GIve configuration here
                     ### Waits for action
 
@@ -441,7 +442,7 @@ class BlocksWorld:
                     else:
                         self.state = -1
                         print self.state
-                        self.config_flag = True
+                        #Call controller service
                 if self.state == -1:
                     self.config_flag = False
                     self.ablock = None
@@ -486,18 +487,17 @@ class BlocksWorld:
                 if db == b.index:
                     self.dblock = b
 
-        while(self.config_flag == False):
-            pass
+    def sendCurrentState(self):
         config_msg = Configuration(config = self.getConfiguration())
-
         block_msg = []
         colour_vars = {(255,0,0):"Red", (0,255,0):"Green", (0,0,255):"Blue"}
         for block in self.blocks:
             block_colour = colour_vars[block.colour]
             print
             block_msg.append(Block(label = "block"+str(block.index), shape = block.shape.shape, colour = block_colour, size = block.size))
-        # print block_msg
+        print self.getConfiguration()
         return SimulatorAddActionResponse(state = State(configuration = config_msg, block_properties = block_msg))
+
     def on_execute(self):
         self.screen.on_init()
         # self.makeRandomBlocks()
