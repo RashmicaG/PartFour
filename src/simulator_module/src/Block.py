@@ -6,6 +6,7 @@ class Block:
         self.colour = colour
         self.size = size
         self.position = position
+        self.home_position = self.position
         self.boundaries = boundaries
         self.rect = pygame.Rect(position[0], position[1], self.shape.width, self.shape.height)
         self.direction = []

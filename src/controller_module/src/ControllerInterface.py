@@ -9,6 +9,8 @@ from std_msgs.msg import Int16
 from collections import deque
 from learning_module.msg import *
 from learning_module.srv import *
+from controller_module.srv import *
+from simulator_module.srv import *
 from copy import deepcopy
 import random
 import types
@@ -24,16 +26,16 @@ class Robot:
         self.goalConfig = Configuration([])
         self.currentState = State(Configuration([]), [] )
         self.currentAction = Action('null', 'null', 'null', 0, Configuration([]),  False)
-        self.newSet = True
+        self.newSet = False
         self.dict = {}
         self.prevGoalConfig = Configuration([])
         self.prevBlockConfig = Configuration([])
 
         # self.blocks = [Block('null', 'null', 'null', 'null'), Block('null', 'null', 'null', 'null')]
                 # only for testing purposes
-        self.blocks = [Block('block0', 'cuboid', 'blue', 'small'), 
-                    Block('block1', 'prism', 'red', 'small'), 
-                    Block('block2', 'cube', 'blue', 'small'), 
+        self.blocks = [Block('block0', 'cuboid', 'blue', 'small'),
+                    Block('block1', 'prism', 'red', 'small'),
+                    Block('block2', 'cube', 'blue', 'small'),
                     # Block('block3', 'cube', 'red', 'small'),
                     # Block('block4', 'prism', 'small', 'yellow')
                     ]
@@ -41,12 +43,12 @@ class Robot:
         self.rules = Rules([])
 
         rospy.init_node('controller', anonymous=True)
-        srv_state = rospy.Service('SendCurrentState', SendCurrentState, self.addCurrentState)
+        srv_state = rospy.Service('AddCurrentState', AddCurrentState, self.addCurrentState)
 
 
     def generateBlockConfig(self, test, max = 4, min = 3):
-        """ A configuration of blocks is represented as 
-        a list. Each index represents a block, and the value 
+        """ A configuration of blocks is represented as
+        a list. Each index represents a block, and the value
         at this index represents what this block is on:
         -1 - table, 0-n: the index of the block it is on.
         MAX and MIN CANNOT be the same"""
@@ -131,17 +133,17 @@ class Robot:
         """ This sends goal to asp_module and returns back action.
         If we want next action we just send same goal. """
 
-        key = (self.currentState.configuration.config, self.goalConfig.config)
+        key = (tuple(self.currentState.configuration.config), tuple(self.goalConfig.config))
         # key = ((1, 2, 1), (1, 0, 1))
-        # print key
+        print key
         if self.dict.has_key(key):
             prevValue = self.dict.get(key)
             if len(prevValue) != 4:
                 prevValue=random.choice(list(prevValue))
             # print "yayyy"
             # print prevValue
-            self.prevBlockConfig = self.currentAction.config
             self.currentAction = Action(prevValue[0], prevValue[1], prevValue[2], 0, Configuration(prevValue[3]), False)
+            # self.prevBlockConfig = self.currentAction.config
             # print self.currentAction
             return
         # else: print "nay"
@@ -153,8 +155,8 @@ class Robot:
             # print "goal"
             # print self.goalConfig
             ans = asp_answer(self.goalConfig).parsed
-            self.prevBlockConfig = self.currentAction.config
             self.currentAction = Action(ans.action, ans.actionableBlock, ans.destinationBlock, ans.timestep, ans.config, ans.goalAchieved)
+            # self.prevBlockConfig = self.currentAction.config
 
             self.goalActive = True
             # return ans_response
@@ -175,7 +177,7 @@ class Robot:
 
         # except rospy.ServiceException, e:
         #     print "Service call failed: %s" % e
-    
+
     def sendStateToLearningModule(self):
         rospy.wait_for_service('LMInitialise')
         try:
@@ -183,7 +185,7 @@ class Robot:
             success = sendState(self.currentState)
         except rospy.ServiceException, e:
             print "Service call failed %s" % e
-    
+
     def sendActionToLearningModule(self, error):
         if error is False:
             rospy.wait_for_service('LMStateActionTaken')
@@ -194,12 +196,12 @@ class Robot:
             except rospy.ServiceException, e:
                 print "Service call failed %s" % e
 
-        else:   
+        else:
             rospy.wait_for_service('LMErrorHasOccured')
             try:
                 if self.currentAction.action == "put_down":
                     sendStateAction = rospy.ServiceProxy('LMErrorHasOccured', LMErrorHasOccured)
-                    sucess = sendStateAction(self.currentAction) 
+                    sucess = sendStateAction(self.currentAction)
             except rospy.ServiceException, e:
                 print "Service call failed %s" % e
 
@@ -211,7 +213,7 @@ class Robot:
             success = sendState(self.blocks)
         except rospy.ServiceException, e:
             print "Service call failed %s" % e
-        
+
     def publisher(self, pub, msg):
         try:
             pub.publish(msg)
@@ -219,8 +221,8 @@ class Robot:
             print "Publishing failed call failed:"
 
         return
-            
-    def executeAction(self, action):
+
+    def executeAction(self):
         """ This will send action to robot module and return feedback"""
         rospy.wait_for_service('SimulatorAddAction')
         try:
@@ -228,14 +230,17 @@ class Robot:
             success = sendState(self.currentAction)
         except rospy.ServiceException, e:
             print "Service call failed %s" % e
-        
+
 
     def addCurrentState(self, state):
         """ Gets configuration of blocks from robot"""
-        print state
+        print "test"
+        self.prevBlockConfig = (0,0,0) # incase the actual state is same as before
         configuration = Configuration(state.state.configuration.config)
         self.currentState = State(configuration = configuration, block_properties = state.state.block_properties)
-        
+        print self.currentState
+        return 1
+
 
     def simulateError(self, expectedConfig):
         """if the expected configuration involved
@@ -247,13 +252,13 @@ class Robot:
         for block in self.blocks:
 
             if block.label == self.currentAction.destinationBlock:
-                # print block.shape 
+                # print block.shape
                 if block.shape == 'prism':
                     actionBlock = int(re.findall('\d+$', self.currentAction.actionableBlock)[0])
                     config = list(expectedConfig.config)
                     config[actionBlock] = -1
                     expectedConfig.config = tuple(config)
-       
+
 
     def writeSequencesToList(self):
         fname = os.path.join(os.path.dirname(__file__), 'output.txt')
@@ -261,15 +266,15 @@ class Robot:
         value = []
         with open(fname) as infile:
             while("generatedRules: " not in infile.readline() ):
-            
+
                 # print "t"
                 # print "whhaaaaaaaaat"
 
-                initial = map(int, re.findall("[+-]?\d+(?:\.\d+)?", infile.readline())) 
+                initial = map(int, re.findall("[+-]?\d+(?:\.\d+)?", infile.readline()))
                 initial = tuple(initial)
-                goal = map(int, re.findall("[+-]?\d+(?:\.\d+)?", infile.readline())) 
-                goal = tuple(goal) 
-                
+                goal = map(int, re.findall("[+-]?\d+(?:\.\d+)?", infile.readline()))
+                goal = tuple(goal)
+
 
                 key = (initial, goal)
                 # print "key"
@@ -310,7 +315,7 @@ class Robot:
 
 
         return Action
-    
+
 
 
 ########################################################################
@@ -318,7 +323,7 @@ class Robot:
 
     def initial(self):
         # print "initial"
-        
+
 
         # CHECK IF NEW CONFIGURATION OF BLOCKS HAS ARRIVED
         # TO DO
@@ -326,7 +331,7 @@ class Robot:
         if (self.newSet is True):
             self.generateBlockConfig('hi')
             self.newSet = False
-        
+
         print "inital config"
         print self.currentState.configuration.config
         self.goalConfig  = self.currentState.configuration
@@ -341,7 +346,7 @@ class Robot:
         self.prevGoalConfig.config = self.goalConfig.config
 
 
-       
+
         # set up Learning Module
         if self.newSet is True:
             self.sendNewBlockSetToLearningModule()
@@ -379,11 +384,15 @@ class Robot:
         # print 'feedback'
 
 
+        print (1,2,3) == (2,1,3)
         expectedConfig = deepcopy(self.currentAction.config)
-
-        while(self.prevBlockConfig == self.currentAction.config):
+        self.prevBlockConfig = self.currentState.configuration.config
+        print "#############################"
+        print (self.prevBlockConfig, self.currentState.configuration.config)
+        print "#############################"
+        while(self.prevBlockConfig == self.currentState.configuration.config):
             pass
-        
+
 
         config = self.currentAction.config
         # print expectedConfig.config
@@ -391,17 +400,17 @@ class Robot:
 
         # print expectedConfig.config
         # print config.config
-        
+
         # print config.config != expectedConfig.config
-  
+
         if config.config != expectedConfig.config:
-            # print 'FAILURE'
+            print 'FAILURE'
             self.sendActionToLearningModule(True)
             self.currentState.configuration = expectedConfig
             # self.currentState.configuration = config  -- when we actually get proper feedbacko
             self.state = 'initial'
         elif config == self.goalConfig:
-            # print 'GOAL'
+            print 'GOAL'
             self.sendActionToLearningModule(False)
             self.currentState.configuration = config
             self.state = 'initial'
@@ -409,7 +418,7 @@ class Robot:
             print "inital config"
             print config.config
             print self.goalConfig.config
-            # print 'on the way to our goooooal'
+            print 'on the way to our goooooal'
             self.sendActionToLearningModule(False)
             self.currentState.configuration = config
             self.state = 'plan'
@@ -445,19 +454,18 @@ if __name__ == '__main__':
     rospy.wait_for_service('LMGenerateRules')
     try:
             getRules = rospy.ServiceProxy('LMGenerateRules', LMGenerateRules)
-            rules = getRules() 
+            rules = getRules()
             print rules
     except rospy.ServiceException, e:
         print "Service call failed %s" % e
-    
-  
-        
 
-    
+
+
+
+
     timestep_publisher = rospy.Publisher('/controller/timestep', Int16, queue_size=10)
-    
-    observation_publisher = rospy.Publisher('/controller/observations', Observation, queue_size=10)  
-    # configuration_publisher = rospy.Publisher('/controller/configuration', Configuration, queue_size=10)    
+
+    observation_publisher = rospy.Publisher('/controller/observations', Observation, queue_size=10)
+    # configuration_publisher = rospy.Publisher('/controller/configuration', Configuration, queue_size=10)
      # rate = rospy.Rate(10)
     print 'Publishers running...'
-    

@@ -43,7 +43,7 @@ class LearningModule:
 
         # initialise
         self.mdp_list.append([])
-        
+
 
     def initialise_lists(self):
         self.success_config.append([])
@@ -53,7 +53,7 @@ class LearningModule:
             blocks = []
             for prop in state.initial_state.block_properties:
                 blocks.append(Block(prop.label, prop.shape, prop.colour, prop.size))
-            start_config = state.initial_state.configuration.config 
+            start_config = state.initial_state.configuration.config
             startingState = State(0, start_config)
             self.initialise_lists()
             self.success_config[-1].append(startingState)
@@ -130,7 +130,7 @@ class LearningModule:
             if action.getActionableBlock() == action_block:
                 if action.getDestinationBlock() == dest_block:
                     action_chosen = action
-                    
+
         self.mdp_list[-1][-1].onPolicyLearning(action_chosen)
         error_config = self.mdp_list[-1][-1].getErrorState()
         print error_config
@@ -144,7 +144,7 @@ class LearningModule:
     def onPolicyLearning(self, action):
         # try:
         """ This will be the callback function"""
-   
+
         actionableBlock = int(re.findall('\d+$',action.action_chosen.actionableBlock)[0])
         if(re.findall('tab',action.action_chosen.destinationBlock)):
             destinationBlock = None
@@ -152,8 +152,10 @@ class LearningModule:
             destinationBlock = int(re.findall('\d+$',action.action_chosen.destinationBlock)[0])
 
         action_chosen = None
-
+        print action.action_chosen
         for action in self.mdp_list[-1][-1].errorstate.actions:
+            print action.actionableBlock
+            print action.destinationBlock
             if(actionableBlock == action.actionableBlock) and (destinationBlock == action.destinationBlock):
                 action_chosen = action
 
@@ -183,12 +185,12 @@ class LearningModule:
                                blocks[dest_block].getColour(),blocks[dest_block].getSize(),
                                mdp.getQMatrix()[state.getLabel()][action.getNextStateAddr()])
                 self.StateActionPairs.append(example)
-        return 
+        return
 
     def generateRules(self, randomCharacterBeingSentSomehow):
-        
+
         print"generateRules"
-    
+
         reduced_mdp_list = []
         attributes = []
         self.mdp_list[-1] = [self.combineIdenticalMDPs(self.mdp_list[-1])]
@@ -282,4 +284,3 @@ if __name__ == '__main__':
 
     print "Ready to learn!"
     rospy.spin()
-
