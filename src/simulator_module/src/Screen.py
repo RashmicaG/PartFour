@@ -21,7 +21,8 @@ class Screen:
         if event.type == pygame.QUIT:
             self.running = False
 
-    def on_render(self, blocks, arm, boundaries, string, bool): #, rule_box):
+
+    def on_render(self, blocks, arm, boundaries, string): #, rule_box):
         self.disp_surf.fill(self.background)
         for boundary in boundaries:
             pygame.draw.line(self.disp_surf, (0,0,0),boundary[0], boundary[1], 4)
@@ -30,6 +31,7 @@ class Screen:
 
         arm.renderShape(self.disp_surf)
         # rule_box.renderShape(self.disp_surf)
+<<<<<<< HEAD
         font = pygame.font.SysFont("monospace", 30)
         label = [0]
         if len(string) != 1:
@@ -72,11 +74,6 @@ class Screen:
            
 
 
-
-
-        # print gg
-        # print "h"
-        # print hh
 
 
         pygame.display.update()

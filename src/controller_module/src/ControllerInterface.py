@@ -227,6 +227,7 @@ class Robot:
 
         return
 
+
     def generateRules(self):
         rospy.wait_for_service('LMGenerateRules')
         try:
@@ -235,6 +236,7 @@ class Robot:
                 print rules
         except rospy.ServiceException, e:
             print "Service call failed %s" % e
+
 
 
     def executeAction(self):
@@ -255,6 +257,7 @@ class Robot:
         self.currentState = State(configuration = configuration, block_properties = state.state.block_properties)
         print self.currentState
         return 1
+
 
     def printThings(self):
         self.print_publisher.publish(Data(goal = self.goalConfig, action = self.currentAction))
@@ -346,7 +349,6 @@ class Robot:
 
 
 
-
 ########################################################################
 #               Main state functions
 
@@ -414,6 +416,7 @@ class Robot:
         # print 'feedback'
 
 
+        print (1,2,3) == (2,1,3)
         expectedConfig = deepcopy(self.currentAction.config)
         self.prevBlockConfig = self.currentState.configuration.config
         print "#############################"
@@ -434,15 +437,12 @@ class Robot:
 
         if config.config != expectedConfig.config:
             print 'FAILURE'
-            self.printError(config.config, expectedConfig.config)
-            self.printStatus("fail")
             self.sendActionToLearningModule(True)
             self.currentState.configuration = expectedConfig
             # self.currentState.configuration = config  -- when we actually get proper feedbacko
             self.state = 'learning'
         elif config == self.goalConfig:
             print 'GOAL'
-            self.printStatus("goal")
             self.sendActionToLearningModule(False)
             self.currentState.configuration = config
             self.state = 'initial'

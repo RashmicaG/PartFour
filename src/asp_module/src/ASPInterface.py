@@ -110,7 +110,8 @@ class ASPInterface:
         config = state.current_state.configuration.config
         size = len(state.current_state.block_properties)
         self.tableSurface = size
-
+        print "initial"
+        print config
 
         fpath_config = os.path.join(os.path.dirname(__file__),'test.sp')
         with open( fpath_config, 'w') as outfile:
@@ -155,7 +156,8 @@ class ASPInterface:
 
         string =  'goal(I) :- '
         index = 0
-
+        print 'goal'
+        print goal.goal.config
         for block in goal.goal.config:
             string +=  ' holds(on(block' + str(index) + ', s'
             if block == -1:

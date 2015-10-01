@@ -76,13 +76,22 @@ class BlocksWorld:
         colour_vars = {"red": (255,0,0), "green":(0,255,0), "blue":(0,0,255)}
         for i in range(0,3):
             rand_shape = self.shape[i]#r.choice(self.shape)
+<<<<<<< HEAD
             rand_colour = self.colour[i]
             rand_size = self.size[1]#r.choice(self.size)
+=======
+            rand_colour = r.choice(self.colour)
+            rand_size = self.size[i]#r.choice(self.size)
+>>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
             width = shape_vars[rand_shape][0] + size_vars[rand_size][0]
             height = shape_vars[rand_shape][1] + size_vars[rand_size][1]
             colour = colour_vars[rand_colour]
             block_shape = Shape(rand_shape, (width, height))
+<<<<<<< HEAD
             position = [150*i + r.randint(75,100), 400 - height]
+=======
+            position = [150*i + r.randint(50,100), 400 - height]
+>>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
             self.blocks.append(B(i,block_shape, colour, rand_size, position, self.boundaries[0]))
 
     def blockOverlapCheck(self):
@@ -445,10 +454,19 @@ class BlocksWorld:
                     if army > 100:
                         self.arm.move("Up")
                     else:
+                        print self.dblock
+                        print self.send
                         if self.dblock != None:
                             self.state = 5
+<<<<<<< HEAD
                         if self.send == False:
                             state = self.sendCurrentState()
+=======
+                            print self.send
+                        if self.send == False:
+                            state = self.sendCurrentState()
+                            print (state, "SOdfalskdfjalskdfjlkj")
+>>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
                             self.send = True
                             self.sendState(state)
 
@@ -479,7 +497,10 @@ class BlocksWorld:
                         if self.ablock.position[1] + self.ablock.shape.height >= self.dblock.position[1]:
                             if p_s <= self.arm.MAX_PINCHER_SEPERATION:
                                 self.arm.grab("Open")
+<<<<<<< HEAD
                                 self.ablock.supported = False
+=======
+>>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
                             else:
                                 self.state = 7
                                 print self.state
@@ -513,7 +534,10 @@ class BlocksWorld:
                         print config_msg
                         self.sendState(State(configuration = config_msg, block_properties = block_msg))
                         self.start_config = False
+<<<<<<< HEAD
                     
+=======
+>>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
 
             elif army <= 1:
                 self.arm.move("Down")
@@ -568,6 +592,7 @@ class BlocksWorld:
         for block in self.blocks:
             block_colour = colour_vars[block.colour]
             block_msg.append(Block(label = "block"+str(block.index), shape = block.shape.shape, colour = block_colour, size = block.size))
+<<<<<<< HEAD
         return State(configuration = config_msg, block_properties = block_msg)
 
     def thingsToPrint(self, data):
@@ -600,22 +625,36 @@ class BlocksWorld:
         print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
         self.failed = True
 
+=======
+        print (self.getConfiguration(), "alksdfjalskdjflkasdjflkjasdljfl")
+        return State(configuration = config_msg, block_properties = block_msg)
+>>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
 
     def on_execute(self):
         self.screen.on_init()
         # self.makeRandomBlocks()
+<<<<<<< HEAD
         bool = False
         self.screen.on_render(self.blocks, self.arm, self.boundaries, self.stringsToPrint, bool)
+=======
+        strings = ["Hello", "rashmica"]
+        self.screen.on_render(self.blocks, self.arm, self.boundaries, strings)
+>>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
         while(self.screen.running):
             for event in pygame.event.get():
                 self.screen.on_event(event)
             self.on_loop()
+<<<<<<< HEAD
             print self.iterations
             print self.failed
             if self.iterations >5 and self.failed == True:
                 bool = True
             self.screen.on_render(self.blocks, self.arm, self.boundaries, self.stringsToPrint, bool)
             pygame.time.wait(3)
+=======
+            self.screen.on_render(self.blocks, self.arm, self.boundaries, strings)
+            pygame.time.wait(50)
+>>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
         self.screen.on_cleanup()
 
 if __name__ == "__main__":
