@@ -534,10 +534,7 @@ class BlocksWorld:
                         print config_msg
                         self.sendState(State(configuration = config_msg, block_properties = block_msg))
                         self.start_config = False
-<<<<<<< HEAD
-                    
-=======
->>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
+
 
             elif army <= 1:
                 self.arm.move("Down")
@@ -592,7 +589,6 @@ class BlocksWorld:
         for block in self.blocks:
             block_colour = colour_vars[block.colour]
             block_msg.append(Block(label = "block"+str(block.index), shape = block.shape.shape, colour = block_colour, size = block.size))
-<<<<<<< HEAD
         return State(configuration = config_msg, block_properties = block_msg)
 
     def thingsToPrint(self, data):
@@ -625,36 +621,23 @@ class BlocksWorld:
         print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
         self.failed = True
 
-=======
-        print (self.getConfiguration(), "alksdfjalskdjflkasdjflkjasdljfl")
-        return State(configuration = config_msg, block_properties = block_msg)
->>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
 
     def on_execute(self):
         self.screen.on_init()
         # self.makeRandomBlocks()
-<<<<<<< HEAD
         bool = False
         self.screen.on_render(self.blocks, self.arm, self.boundaries, self.stringsToPrint, bool)
-=======
-        strings = ["Hello", "rashmica"]
-        self.screen.on_render(self.blocks, self.arm, self.boundaries, strings)
->>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
         while(self.screen.running):
             for event in pygame.event.get():
                 self.screen.on_event(event)
             self.on_loop()
-<<<<<<< HEAD
             print self.iterations
             print self.failed
             if self.iterations >5 and self.failed == True:
                 bool = True
             self.screen.on_render(self.blocks, self.arm, self.boundaries, self.stringsToPrint, bool)
             pygame.time.wait(3)
-=======
-            self.screen.on_render(self.blocks, self.arm, self.boundaries, strings)
-            pygame.time.wait(50)
->>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
+
         self.screen.on_cleanup()
 
 if __name__ == "__main__":
