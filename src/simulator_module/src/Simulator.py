@@ -52,7 +52,7 @@ class BlocksWorld:
         config = self.getConfiguration()
         config_msg = Configuration(config = config)
         block_msg = []
-        colour_vars = {(255,0,0):"Red", (0,255,0):"Green", (0,0,255):"Blue"}
+        colour_vars = {(255,0,0):"red", (0,255,0):"green", (0,0,255):"blue"}
         for block in self.blocks:
             block_colour = colour_vars[block.colour]
             block_msg.append(Block(label = "block"+str(block.index), shape = block.shape.shape, colour = block_colour, size = block.size))
@@ -595,7 +595,7 @@ class BlocksWorld:
     def sendCurrentState(self):
         config_msg = Configuration(config = self.getConfiguration())
         block_msg = []
-        colour_vars = {(255,0,0):"Red", (0,255,0):"Green", (0,0,255):"Blue"}
+        colour_vars = {(255,0,0):"red", (0,255,0):"green", (0,0,255):"blue"}
         for block in self.blocks:
             block_colour = colour_vars[block.colour]
             block_msg.append(Block(label = "block"+str(block.index), shape = block.shape.shape, colour = block_colour, size = block.size))
