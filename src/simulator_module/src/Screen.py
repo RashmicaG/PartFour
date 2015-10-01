@@ -22,7 +22,7 @@ class Screen:
             self.running = False
 
 
-    def on_render(self, blocks, arm, boundaries, string): #, rule_box):
+    def on_render(self, blocks, arm, boundaries, string, bool_): #, rule_box):
         self.disp_surf.fill(self.background)
         for boundary in boundaries:
             pygame.draw.line(self.disp_surf, (0,0,0),boundary[0], boundary[1], 4)
@@ -31,7 +31,7 @@ class Screen:
 
         arm.renderShape(self.disp_surf)
         # rule_box.renderShape(self.disp_surf)
-<<<<<<< HEAD
+
         font = pygame.font.SysFont("monospace", 30)
         label = [0]
         if len(string) != 1:
@@ -68,7 +68,7 @@ class Screen:
                         self.disp_surf.blit(label, (destBlock[2], destBlock[3]-30)) #same x, higher y
                         element[2] = destBlock[2]
                         element[3] = destBlock[3]-30
-        if bool:
+        if bool_:
             label = font.render( "-occurs(has_shape(D, prism), has_colour(D, red))", 1, (0,0,0))
             self.disp_surf.blit(label, (100, 500))
            
