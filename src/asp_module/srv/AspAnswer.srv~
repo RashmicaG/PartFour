@@ -1,6 +1,0 @@
-string goal
-string entityA
-string entityB
-int16 timeStep
----
-SubGoal[] parsed
