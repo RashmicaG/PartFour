@@ -35,6 +35,7 @@ class Robot:
         self.print_publisher = None
         self.print_publisher2 = None
         self.print_publisher3 = None
+        self.error_count = 0
 
         # self.blocks = [Block('null', 'null', 'null', 'null'), Block('null', 'null', 'null', 'null')]
                 # only for testing purposes
@@ -231,6 +232,7 @@ class Robot:
     def generateRules(self):
         rospy.wait_for_service('LMGenerateRules')
         try:
+                print "generating rules"
                 getRules = rospy.ServiceProxy('LMGenerateRules', LMGenerateRules)
                 rules = getRules()
                 print rules
@@ -276,7 +278,7 @@ class Robot:
         self.print_publisher3.publish(str(i))
         print self.blocks[i].colour
         print self.blocks[i].shape
-        # self.print_publisher2.publish(str(i) 
+        # self.print_publisher2.publish(str(i)
 
 
 
@@ -407,15 +409,11 @@ class Robot:
         print self.currentAction.actionableBlock
         print self.currentAction.destinationBlock
         print self.currentAction.config.config
-
         self.executeAction()
-
         self.state = 'feedback'
 
     def feedback(self):
         # print 'feedback'
-
-
         print (1,2,3) == (2,1,3)
         expectedConfig = deepcopy(self.currentAction.config)
         self.prevBlockConfig = self.currentState.configuration.config
@@ -440,7 +438,13 @@ class Robot:
             self.sendActionToLearningModule(True)
             self.currentState.configuration = expectedConfig
             # self.currentState.configuration = config  -- when we actually get proper feedbacko
-            self.state = 'learning'
+            if self.error_count > 5:
+                self.error_count = 0
+                self.state = 'learning'
+            else:
+                print ("Error Count: ", self.error_count)
+                self.error_count+=1
+                self.state = 'initial'
         elif config == self.goalConfig:
             print 'GOAL'
             self.sendActionToLearningModule(False)
@@ -459,8 +463,6 @@ class Robot:
         # print 'learning'
         print 'learning'
         self.generateRules()
-
-
         self.state = 'initial'
 ########################################################################
 

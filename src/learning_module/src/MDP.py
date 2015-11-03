@@ -95,17 +95,18 @@ class MDP:
             self.rewardmat[state.getLabel()] = -2.2
             print "stack state"
         self.rewardmat[errorstate.getLabel()] = 5.5
-        for i in range(0,2000):
+        for i in range(0,2500):
             currentstate = r.choice(self.statelist)
-            for state in self.statelist:
-                for action in state.getActions():
-                    action.setVisited(False)
-            while(currentstate != errorstate):
+            while(currentstate != self.statelist[errorstate.getLabel()]):
                 action_chosen = currentstate.chooseStateAction(self.probmat[currentstate.getLabel()])
                 nextstate = self.statelist[action_chosen.getNextStateAddr()]
                 self.qLearning(currentstate,  action_chosen)
                 self.updateProbabilityMatrix(self.probmat[currentstate.getLabel()], self.qmat[currentstate.getLabel()])
                 currentstate = nextstate
+            for state in self.statelist:
+                for action in state.getActions():
+                    action.setVisited(False)
+
         print "end of simulation"
         """END"""
 
@@ -133,6 +134,10 @@ class MDP:
             action_chosen.incrementNumVisits()
             action_chosen.setVisited(True)
         self.qmat[currentstate.getLabel()][action_chosen.getNextStateAddr()] = current_qval
+        """
+        Update the logical tree using the example.
+        Use the leaf nodes to update all the state-action pairs
+        """
         """END"""
 
     def updateProbabilityMatrix(self, probmat, qmat):

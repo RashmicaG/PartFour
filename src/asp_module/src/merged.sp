@@ -11,7 +11,7 @@
 
 #const numSurfaces = 3.
 #const numBlocks = 2. 
-#const numSteps = 4.
+#const numSteps = 16.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  sorts
@@ -393,35 +393,19 @@ holds(has_location(tab0, a0), 0).
 
 %% Initial scene description
 has_surface(tab0, s3).
-<<<<<<< HEAD
 has_size(block0, medium).
-has_colour(block0, Red).
-has_shape(block0, prism).
+has_colour(block0, red).
+has_shape(block0, cube).
 has_surface(block0, s0).
-holds(on(block0, s1), 0).
+holds(on(block0, s2), 0).
 has_size(block1, medium).
-has_colour(block1, Blue).
-has_shape(block1, cube).
+has_colour(block1, blue).
+has_shape(block1, prism).
 has_surface(block1, s1).
-holds(on(block1, s2), 0).
+holds(on(block1, s0), 0).
 has_size(block2, medium).
-has_colour(block2, Green).
+has_colour(block2, green).
 has_shape(block2, cuboid).
-=======
-has_size(block0, Small).
-has_colour(block0, Green).
-has_shape(block0, Prism).
-has_surface(block0, s0).
-holds(on(block0, s3), 0).
-has_size(block1, Medium).
-has_colour(block1, Blue).
-has_shape(block1, Cube).
-has_surface(block1, s1).
-holds(on(block1, s3), 0).
-has_size(block2, Large).
-has_colour(block2, Red).
-has_shape(block2, Cuboid).
->>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
 has_surface(block2, s2).
 holds(on(block2, s3), 0).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -446,8 +430,4 @@ occurs(A,I) | -occurs(A,I) :- not goal(I), #agent_action(A).
 :- #step(I),
    not something_happened(I),
    something_happened(I+1).
-<<<<<<< HEAD
-goal(I) :-  holds(on(block0, s3), I), holds(on(block1, s0), I), holds(on(block2, s3), I).
-=======
-goal(I) :-  holds(on(block0, s2), I), holds(on(block1, s3), I), holds(on(block2, s1), I).
->>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
+goal(I) :-  holds(on(block0, s3), I), holds(on(block1, s2), I), holds(on(block2, s3), I).

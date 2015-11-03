@@ -124,8 +124,6 @@ class LearningModule:
         action_block = actionableBlock
         dest_block = destinationBlock
         action_chosen = None
-
-
         for action in self.mdp_list[-1][-1].getErrorState().getActions():
             if action.getActionableBlock() == action_block:
                 if action.getDestinationBlock() == dest_block:
@@ -133,8 +131,9 @@ class LearningModule:
 
         self.mdp_list[-1][-1].onPolicyLearning(action_chosen)
         error_config = self.mdp_list[-1][-1].getErrorState()
-        print error_config
-        print "about to simulate"
+
+        print self.success_config[-1]
+
         self.mdp_list[-1][-1].simulation(error_config, self.success_config[-1])
         return True
         # except:
@@ -146,6 +145,7 @@ class LearningModule:
         """ This will be the callback function"""
         actionableBlock = int(re.findall('\d+$',action.action_chosen.actionableBlock)[0])
         if(re.findall('tab',action.action_chosen.destinationBlock)):
+            print "###############TABLE################"
             destinationBlock = None
         else:
             destinationBlock = int(re.findall('\d+$',action.action_chosen.destinationBlock)[0])
@@ -162,12 +162,7 @@ class LearningModule:
         self.mdp_list[-1][-1].onPolicyLearning(action_chosen)
         config = self.mdp_list[-1][-1].getErrorState()
         self.success_config[-1].append(config)
-        #     return True
-        # except:
-        #     return False
         return True
-
-        """ Get the message and parse it to be passed into the function"""
 
     def writeToList(self, mdp):
         blocks = mdp.getBlocks()
@@ -197,7 +192,7 @@ class LearningModule:
 
         training_set = self.StateActionPairs
 
-        attr_shape = ("prism", "cube", "cuboid")
+        attr_shape = ("cube", "prism", "cuboid")
         attr_colour = ("red", "blue", "green")
         attr_size = ("small","medium","large")
         attribute_dict = [("has_shape(A,", attr_shape), ("has_colour(A, ", attr_colour), ("has_size(A, ", attr_size),
@@ -210,19 +205,9 @@ class LearningModule:
             attributes.append(Attribute(name, index, vals))
             index += 1
         self.decision_tree = DecisionTree(attributes, training_set)
-        rules = self.decision_tree.createDecisionTree()
-
-        list_ = []
-        for rule in rules:
-            average = 0
-            for data in rule[-1]:
-                average += data[-1]
-            average = average/len(rule[-1])
-            list_.append((rule[0], average))
-
-
-        rules = self.selectRules(list_)
-        print "WOOO"
+        rules = self.decision_tree.getRules()
+        rules = self.selectRules(rules)
+        print ""
         print rules
         return rules
 
@@ -233,7 +218,6 @@ class LearningModule:
         q_val = []
         for index, rule in enumerate(rules):
             q_val.append([index, rule[-1]])
-
         whitened = whiten(q_val)
         centroids,_ = kmeans(whitened, 3, thresh = 1,iter = 100)
         ids,_= vq(whitened, centroids)
@@ -255,7 +239,6 @@ class LearningModule:
                 sentence = sentence + segment + ", "
             sentence = sentence[:-2]
             valid_rules.append(sentence)
-
         return Rules(rule = valid_rules)
 
     def reduceMDP(self,errorconfig, stack_config, start_config, blocks):

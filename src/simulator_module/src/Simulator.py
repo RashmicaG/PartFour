@@ -8,11 +8,11 @@ from Block import Block as B
 from RobotArm import RobotArm
 from RuleBox import RuleBox
 from Screen import Screen
+from std_msgs.msg import String
 from asp_module.msg import *
 from simulator_module.srv import *
 from simulator_module.msg import *
 from controller_module.srv import *
-from std_msgs.msg import String
 import re
 
 
@@ -20,7 +20,7 @@ class BlocksWorld:
     def __init__(self):
         self.screen = Screen(1024, 768)
         self.blocks = []
-        self.shape = ("prism", "cube", "cuboid")
+        self.shape = ("cube", "prism", "cuboid")
         self.colour = ("red", "blue", "green")
         self.size = ("small" , "medium", "large")
         self.boundaries = [((0,402), (1024,402)),((700,0),(700,400))]
@@ -77,14 +77,8 @@ class BlocksWorld:
         for i in range(0,3):
             rand_shape = self.shape[i]#r.choice(self.shape)
 
-# <<<<<<< HEAD
             rand_colour = self.colour[i]
             rand_size = self.size[1]#r.choice(self.size)
-# =======
-#             rand_colour = r.choice(self.colour)
-#             rand_size = self.size[i]#r.choice(self.size)
-# >>>>>>> 394421bd659ef044222d492354a1fbebb5a7f01e
-
 
             width = shape_vars[rand_shape][0] + size_vars[rand_size][0]
             height = shape_vars[rand_shape][1] + size_vars[rand_size][1]
