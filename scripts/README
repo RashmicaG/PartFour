@@ -1,15 +1,1 @@
-//how to make script
-
-#!/bin/bash  --top of file
-<first input name>=$1  
-<second input name> =$2
-
-
-command you want to run with $<first input name> etc
-
-
-
-save. make executable by running "sudo chmod a=r+w+x <scriptFileName>"
-
-
-
+These are just some scripts I used for testing the ASP individually when updating it.
