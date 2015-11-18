@@ -8,7 +8,7 @@ You need the following installed:
 
 Running the code:
 Run each of the following in a separate terminal:
-- rosrun asp\_module ASPInterface.py <path_to_SPARC_solver>  <path_to_catkin_workspace/src/asp_module/src/>
+- rosrun asp\_module ASPInterface.py path_to_SPARC_solver  path_to_catkin_workspace/src/asp_module/src/
 - rosrun controller_module ControllerInterface.py 
 - rosrun learning_module LearningModule.py 
 - rosrun simulator_module Simulator.py 
