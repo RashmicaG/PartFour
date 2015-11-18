@@ -1,16 +1,16 @@
-# PartFour
 
-PhantomX Pincher Arm docs:
-- http://www.trossenrobotics.com/p/PhantomX-Pincher-Robot-Arm.aspx
-- http://www.trossenrobotics.com/Shared/productdocs/PhantomX_Pincher_Arm_Quickstart.pdf
-- http://www.trossenrobotics.com/productdocs/assemblyguides/phantomx-basic-robot-arm.html
-- https://github.com/corot/turtlebot_arm
-- https://github.com/corb555/arbotix_ros
+You need the following installed:
+- ROS -- indigo or later (should work fine on earlier versions but hasn't been tested)
+- SPARC (https://github.com/iensen/sparc/wiki)
+- DLV (http://www.dlvsystem.com/). This needs to be executable from the folder you run the code from.
+- python with pygame, numpy and scipy.
 
 
-Possible errors:
-- "Cannot open port /dev/tty/USB0" - add your usergroup to dialout group and log out and back in (eg sudo usermod -a -G dialout $USER)
-- Your bashrc should:
-	- source /opt/ros/indigo/setup.bash and (if you have more than one catkin workspace )source <path to current catkin workspace>/devel/setup.bash
-	- add <path to catkinworkspace>/devel/lib/python2.7/dist-packages/ to PYTHONPATH
-	- add <path to catkinworkspace> to ROS_PACKAGE_PATH
+Running the code:
+Run each of the following in a separate terminal:
+rosrun asp\_module ASPInterface.py <path_to_SPARC_solver>  <path_to_catkin_workspace/src/asp_module/src/>
+rosrun controller_module ControllerInterface.py 
+rosrun learning_module LearningModule.py 
+rosrun simulator_module Simulator.py 
+
+If you want to use a robot arm instead you can create a Robot module to replace the simulator module.
